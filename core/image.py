@@ -7,6 +7,7 @@ import numpy.linalg as la
 from PIL import Image as IM
 import matplotlib.pyplot as plt
 import os
+from time import time
 
 """
 
@@ -25,31 +26,110 @@ Notes:
 	- Compare with SVD (?)
 """
 
+def pca(data, compression):
+	rows = data.shape[0]		
+	cols = data.shape[1]
+
+	mean = data.mean(axis=0)  # mean of each column
+	std = data.std(axis=0)  # standard deviation of each column
+	centered = data-mean  # centered at origin
+	adjusted = centered/std  # variance 1 across each axis
+	covariance = np.dot(adjusted.T, adjusted)/rows  # X.T*X/(n-1) 
+	eigVal, eigVec = la.eig(covariance)  # find unit eigen vectors and eigen values of covariance matrix
+	order = eigVal.argsort()[::-1]
+	eigVal = eigVal[order]
+	eigVec = eigVec[:,order]
+
+	total = eigVal.sum()
+
+	percentVar = 0
+	components = 0
+	print("\nTotal: " + str(total))
+	while round(percentVar, 2) < compression:  # need to keep increasing components
+		percentVar += (eigVal[components]/total)*100
+		components += 1
+		print("\t" + str(round(eigVal[components], 3)) + ", " + str(round(percentVar, 3)))
+	
+	print("Using " + str(components) + " components to achieve " + str(round(percentVar, 2)) + "% variance:") 
+
+	feature = eigVec.copy()
+
+	for i in range(1, min(rows, cols)-components + 1):
+		feature[:,feature.shape[1]-i] = np.zeros(cols).T
+	
+	projected = np.dot(feature.T, adjusted.T).T
+	normalized = la.multi_dot([feature, feature.T, adjusted.T]).T  # data projected onto principal subspace 
+	restored = normalized*std+mean
+	restored = np.absolute(restored).astype(np.float64)
+	return restored
+
 class Image:
+	validExt = {".jpg", ".jpeg", ".png"}
+
 	def __init__(self, fileName):
 		self.resourcePath = os.path.join(os.getcwd(), "images")
-		self.path = os.path.join(self.resourcePath, fileName)
-		print("\nLoading image data from " + self.path)
-		self._img = IM.open(self.path)
+		self.outputPath = os.path.join(os.getcwd(), "output")
+		self.imagePath = os.path.join(self.resourcePath, fileName)
+
+		availableImages = os.listdir(self.resourcePath)
+
+		if fileName not in availableImages:
+			raise ValueError(fileName + " is not in resources folder!!!")
+
+		self.ext = None
+
+		for ext in Image.validExt:
+			if ext in fileName:
+				valid = True
+				for i in range(1, len(ext)+1):
+					if fileName[-1*i] != ext[-1*i]:
+						valid = False
+				if valid:
+					self.ext = ext
+		
+		if self.ext is None:
+			raise ValueError("Invalid filename for image: " + fileName)
+
+		print("\nLoading image data from " + self.imagePath)
+		self._img = IM.open(self.imagePath)
 		self.isRGB = self.mode == "RGB"
 		self.data = ImageData(self._img)
 		
-		print("\t- operation was successful")
-		print("\nDimensions of image: " + str(self.data.shape))		
+		print("\t- dimensions of image: " + str(self.data.shape))
+		print("\t- image mode: " + self._img.mode)
+		print("\nImage loaded successfully!")		
 
 	def makeBW(self):
 		self._img = self.convert("L")
+		self.isRGB = False
 		self.data = ImageData(self._img)
+		
 
-	def compress(self, components):
-		print("\nCompressing with "+str(components)+" components...")
-		self.data._data = pca(self.data._data, components, self.isRGB)
-		self.data.toInt()
-		self._img = IM.fromarray(self.data)
-
+	def compress(self, compression):
+		if compression < 0 or compression > 100:
+			raise ValueError(str(compression) + " is not between 0 and 100!")
+		#componentsRange = [0, min([self.data.shape[0], self.data.shape[1]]))]
+		print("\nCompressing with "+str(compression)+"% compression...")
+		#print("Components in range: " + str(componentsRange))
+		timer = time()
+		if self.isRGB:
+			r = self.data._data[:,:,0]
+			g = self.data._data[:,:,1]
+			b = self.data._data[:,:,2]
+			
+			d_r, d_g, d_b = pca(r, compression), pca(g, compression), pca(b, compression)
+			self.data._data = np.dstack((d_r, d_g, d_b))
+			self.data.floatToInt()
+			self._img = IM.fromarray(self.data)
+		else:
+			self.data._data = pca(self.data._data, compression)
+			self.data.floatToInt()
+			self._img = IM.fromarray(self.data)
+		print("\t- operation took " + str(round(time()-timer, 2)) + " secs")
 
 	def save(self, name):
-		path = os.path.join(self.resourcePath, name+".jpg")
+		path = os.path.join(self.outputPath, name+self.ext)
+		print("\nSaving image to: " + str(self.outputPath) + " as " + name+self.ext)
 		self._img.save(path)
 
 	def __getattr__(self, key):
@@ -63,7 +143,7 @@ class ImageData:
 		self._data = np.asarray(image)
 		self.isRGB = len(self.shape) == 3 and self.data.shape[2] == 3
 
-	def toInt(self):
+	def floatToInt(self):
 		minimum = self.min()
 		maximum = self.max()
 		diff = maximum-minimum
@@ -74,32 +154,4 @@ class ImageData:
 		if key == "_data":
 			raise AttributeError()
 		return getattr(self._data, key)
-
-def pca(data, components, isRGB=True):
-	rows = data.shape[0]		
-	cols = data.shape[1]
-
-	if isRGB:
-		pass
-
-	mean = data.mean(axis=0)  # mean of each column
-	std = data.std(axis=0)  # standard deviation of each column
-	centered = data-mean  # centered at origin
-	adjusted = centered/std  # variance 1 across each axis
-	covariance = np.dot(adjusted.T, adjusted)/rows  # X.T*X/(n-1) 
-	eigVal, eigVec = la.eig(covariance)  # find unit eigen vectors and eigen values of covariance matrix
-	order = eigVal.argsort()[::-1]
-	eigVal = eigVal[order]
-	eigVec = eigVec[:,order]
-
-	feature = eigVec.copy()
-	
-	for i in range(1, feature.shape[1]-components + 1):
-		feature[:,feature.shape[1]-i] = np.zeros(cols).T
-	
-	projected = np.dot(feature.T, adjusted.T).T
-	normalized = la.multi_dot([feature, feature.T, adjusted.T]).T  # data projected onto principal subspace 
-	restored = normalized*std+mean
-	restored = np.absolute(restored).astype(np.float64)
-	return restored
 		

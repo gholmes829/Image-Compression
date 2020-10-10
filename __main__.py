@@ -4,12 +4,14 @@ import sys
 
 def main(argv):
 	driver = Driver()
-	driver.run(argv[1])
+	if len(argv) == 2:
+		driver.run(fileName=argv[1])
+	elif len(argv) == 3:
+		driver.run(fileName=argv[1], convertBW=argv[2])
+	elif len(argv) == 4:
+		driver.run(fileName=argv[1], convertBW=argv[2], accuracy=argv[3])
+	else:
+		driver.run()
 
 if __name__ == "__main__":
-	if len(sys.argv) == 2:
-		main(sys.argv)
-	else:
-		print("Incorrect arguments:")
-		print("\t- Need to put valid image in \"images\" folder")
-		print("\t- Run as ./__main__ <image file name>")
+	main(sys.argv)
