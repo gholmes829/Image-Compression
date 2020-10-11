@@ -27,6 +27,21 @@ Notes:
 """
 
 def pca(data, compression):
+	if type(compression) == float:
+		mode = "variance"
+	elif type(compression) == int:
+		mode = "components"
+	elif type(compression) == str:
+		mode = "degree"
+		percentVar = {
+			"min": 99.99,
+			"medium": 97.5,
+			"high": 92.5,
+		}
+		
+		print("\nUsing approximately " + str(percentVar[compression]) + "% variance for \"" + compression + "\" compression")
+		return pca(data, percentVar[compression])
+
 	rows = data.shape[0]		
 	cols = data.shape[1]
 
@@ -34,7 +49,7 @@ def pca(data, compression):
 	std = data.std(axis=0)  # standard deviation of each column
 	centered = data-mean  # centered at origin
 	adjusted = centered/std  # variance 1 across each axis
-	covariance = np.dot(adjusted.T, adjusted)/rows  # X.T*X/(n-1) 
+	covariance = np.dot(adjusted.T, adjusted)/rows  # X.T*X/(n) 
 	eigVal, eigVec = la.eig(covariance)  # find unit eigen vectors and eigen values of covariance matrix
 	order = eigVal.argsort()[::-1]
 	eigVal = eigVal[order]
@@ -42,19 +57,26 @@ def pca(data, compression):
 
 	total = eigVal.sum()
 
+	totalVar = 0
 	percentVar = 0
 	components = 0
-	print("\nTotal: " + str(total))
-	while round(percentVar, 2) < compression:  # need to keep increasing components
-		percentVar += (eigVal[components]/total)*100
-		components += 1
-		print("\t" + str(round(eigVal[components], 3)) + ", " + str(round(percentVar, 3)))
+
+	if mode == "variance":
+		print("\nTotal possible variance for channel: " + str(round(np.real(total), 3)))
+		while round(percentVar, 1) < compression:  # need to keep increasing components
+			variance = eigVal[components]
+			totalVar += variance
+			percentVar += (variance/total)*100
+			components += 1
+			print("\t- accumulated variance with " + str(components) + " component(s): " + str(round(np.real(totalVar), 2)) + " (" + str(round(np.real(percentVar), 2)) + "%)")
+		
+		print("\n\t- using " + str(components) + " components to achieve " + str(round(np.real(percentVar), 2)) + "% variance\n") 
+	elif mode == "components":
+		components = compression
 	
-	print("Using " + str(components) + " components to achieve " + str(round(percentVar, 2)) + "% variance:") 
-
 	feature = eigVec.copy()
-
-	for i in range(1, min(rows, cols)-components + 1):
+	
+	for i in range(1, cols-components + 1):
 		feature[:,feature.shape[1]-i] = np.zeros(cols).T
 	
 	projected = np.dot(feature.T, adjusted.T).T
@@ -74,7 +96,7 @@ class Image:
 		availableImages = os.listdir(self.resourcePath)
 
 		if fileName not in availableImages:
-			raise ValueError(fileName + " is not in resources folder!!!")
+			raise ValueError("\"" + fileName + "\" is not in images folder! Add file to images folder to use.")
 
 		self.ext = None
 
@@ -88,7 +110,7 @@ class Image:
 					self.ext = ext
 		
 		if self.ext is None:
-			raise ValueError("Invalid filename for image: " + fileName)
+			raise ValueError("Invalid extension for file: " + fileName)
 
 		print("\nLoading image data from " + self.imagePath)
 		self._img = IM.open(self.imagePath)
@@ -106,26 +128,24 @@ class Image:
 		
 
 	def compress(self, compression):
-		if compression < 0 or compression > 100:
-			raise ValueError(str(compression) + " is not between 0 and 100!")
-		#componentsRange = [0, min([self.data.shape[0], self.data.shape[1]]))]
-		print("\nCompressing with "+str(compression)+"% compression...")
-		#print("Components in range: " + str(componentsRange))
 		timer = time()
 		if self.isRGB:
+			print("\t- RGB: "+str(self.isRGB))
 			r = self.data._data[:,:,0]
 			g = self.data._data[:,:,1]
 			b = self.data._data[:,:,2]
 			
+			print("\t- by channel (r, g, b)")
 			d_r, d_g, d_b = pca(r, compression), pca(g, compression), pca(b, compression)
 			self.data._data = np.dstack((d_r, d_g, d_b))
 			self.data.floatToInt()
 			self._img = IM.fromarray(self.data)
 		else:
+			print("\t- by luminosity")
 			self.data._data = pca(self.data._data, compression)
 			self.data.floatToInt()
 			self._img = IM.fromarray(self.data)
-		print("\t- operation took " + str(round(time()-timer, 2)) + " secs")
+		print("\nOperation took " + str(round(time()-timer, 2)) + " secs")
 
 	def save(self, name):
 		path = os.path.join(self.outputPath, name+self.ext)

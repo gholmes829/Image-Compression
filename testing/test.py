@@ -20,7 +20,7 @@ mean = data.mean(axis=0)  # mean of each column
 std = data.std(axis=0)  # standard deviation of each column
 centered = data-mean  # centered at origin
 adjusted = centered/std  # variance 1 across each axis
-covariance = np.dot(adjusted.T, adjusted)/samples  # X.T*X/(n-1) 
+covariance = np.dot(adjusted.T, adjusted)/(samples)  # X.T*X/(n) 
 eigVal, eigVec = la.eig(covariance)  # find unit eigen vectors and eigen values of covariance matrix
 	
 order = eigVal.argsort()[::-1]

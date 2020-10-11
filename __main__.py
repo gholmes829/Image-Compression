@@ -3,13 +3,16 @@ from driver import Driver
 import sys
 
 def main(argv):
+	argc = len(argv)
 	driver = Driver()
-	if len(argv) == 2:
+	if argc == 2:
 		driver.run(fileName=argv[1])
-	elif len(argv) == 3:
-		driver.run(fileName=argv[1], convertBW=argv[2])
-	elif len(argv) == 4:
-		driver.run(fileName=argv[1], convertBW=argv[2], accuracy=argv[3])
+	elif argc == 3:
+		driver.run(fileName=argv[1], mode=argv[2])
+	elif argc == 4:
+		driver.run(fileName=argv[1], mode=argv[2], compression=argv[3])
+	elif argc == 5:
+		driver.run(fileName=argv[1], mode=argv[2], compression=argv[3], convertBW=argv[4])
 	else:
 		driver.run()
 
