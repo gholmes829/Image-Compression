@@ -121,7 +121,7 @@ class Image:
 		self.data = ImageData(self._img)
 		
 
-	def compress(self, compression):
+	def compress(self, compression, preventOverflow=False):
 		timer = time()
 		if self.isRGB:
 			print("\t- RGB: "+str(self.isRGB))
@@ -132,13 +132,11 @@ class Image:
 			print("\t- by channel (r, g, b)")
 			d_r, d_g, d_b = pca(r, compression), pca(g, compression), pca(b, compression)
 			
-			# Sandy's way
-			#self.data._data[:, :, 0] = d_r	
-			#self.data._data[:, :, 1] = d_g	
-			#self.data._data[:, :, 2] = d_b
-
-			# My way
-			self.data._data = np.array(np.dstack((d_r, d_g, d_b)), dtype=np.uint8)
+			if preventOverflow:
+				self.data._data = np.dstack((d_r, d_g, d_b))
+				self.data.toUint8()
+			else:
+				self.data._data = np.array(np.dstack((d_r, d_g, d_b)), dtype=np.uint8)
 
 			self._img = IM.fromarray(self.data._data)
 		else:
@@ -162,6 +160,12 @@ class ImageData:
 		self._data = np.array(image)
 		self.isRGB = len(self.shape) == 3 and self.data.shape[2] == 3
 	
+	def toUint8(self):
+		minimum = self.min()
+		maximum = self.max()
+		diff = maximum-minimum
+		self._data = (((self._data-minimum)/maximum) * 255).astype(np.uint8)
+
 	def __getattr__(self, key):
 		if key == "_data":
 			raise AttributeError()
