@@ -42,47 +42,44 @@ def pca(data, compression):
 		print("\nUsing approximately " + str(percentVar[compression]) + "% variance for \"" + compression + "\" compression")
 		return pca(data, percentVar[compression])
 
-	rows = data.shape[0]		
-	cols = data.shape[1]
+	rows, cols = data.shape
 
-	mean = data.mean(axis=0)  # mean of each column
-	std = data.std(axis=0)  # standard deviation of each column
-	centered = data-mean  # centered at origin
-	adjusted = centered/std  # variance 1 across each axis
-	covariance = np.dot(adjusted.T, adjusted)/rows  # X.T*X/(n) 
+	mean, std = data.mean(axis=0), data.std(axis=0)  # mean and std of each column
+	standardized = (data-mean)/std  # variance 1 across each axis
+
+	covariance = np.dot(standardized.T, standardized)/rows  # X.T*X/(n) 
+
 	eigVal, eigVec = la.eig(covariance)  # find unit eigen vectors and eigen values of covariance matrix
 	order = eigVal.argsort()[::-1]
 	eigVal = eigVal[order]
 	eigVec = eigVec[:,order]
 
-	total = eigVal.sum()
-
-	totalVar = 0
-	percentVar = 0
-	components = 0
+	total = eigVal.sum()	
 
 	if mode == "variance":
+		components = 0
+		variance = 0
+		percent = 0
 		print("\nTotal possible variance for channel: " + str(round(np.real(total), 3)))
-		while round(percentVar, 1) < compression:  # need to keep increasing components
-			variance = eigVal[components]
-			totalVar += variance
-			percentVar += (variance/total)*100
+		while round(percent, 1) < compression:  # need to keep increasing components
+			variance += eigVal[components]
+			percent = (variance/total)*100
 			components += 1
-			print("\t- accumulated variance with " + str(components) + " component(s): " + str(round(np.real(totalVar), 2)) + " (" + str(round(np.real(percentVar), 2)) + "%)")
+			print("\t- accumulated variance with " + str(components) + " component(s): " + str(round(np.real(variance), 2)) + " (" + str(round(np.real(percent), 2)) + "%)")
 		
-		print("\n\t- using " + str(components) + " components to achieve " + str(round(np.real(percentVar), 2)) + "% variance\n") 
+		print("\n\t- using " + str(components) + " components to achieve " + str(round(np.real(percent), 2)) + "% variance\n") 
+
 	elif mode == "components":
 		components = compression
 	
 	feature = eigVec.copy()
 	
-	for i in range(1, cols-components + 1):
+	for i in range(1, cols-components + 1):  # compress image by removing columns
 		feature[:,feature.shape[1]-i] = np.zeros(cols).T
 	
-	projected = np.dot(feature.T, adjusted.T).T
-	normalized = la.multi_dot([feature, feature.T, adjusted.T]).T  # data projected onto principal subspace 
-	restored = normalized*std+mean
-	restored = np.absolute(restored).astype(np.float64)
+	projected = np.dot(feature.T, standardized.T).T
+	normalized = la.multi_dot([feature, feature.T, standardized.T]).T  # data projected onto principal subspace 
+	restored = np.absolute(normalized*std+mean).astype(np.float64)
 	return restored
 
 class Image:
