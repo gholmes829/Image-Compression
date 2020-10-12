@@ -86,7 +86,7 @@ def pca(data, compression):
 	return restored
 
 class Image:
-	validExt = {".jpg", ".jpeg", ".png"}
+	validExt = {".jpg", ".jpeg", ".png", ".tif"}
 
 	def __init__(self, fileName):
 		self.resourcePath = os.path.join(os.getcwd(), "images")
