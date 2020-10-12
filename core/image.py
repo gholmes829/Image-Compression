@@ -45,16 +45,16 @@ def pca(data, compression):
 	rows, cols = data.shape
 
 	mean, std = data.mean(axis=0), data.std(axis=0)  # mean and std of each column
-	standardized = (data-mean)/std  # variance 1 across each axis
+	standardized = (data-mean)/std  # center data at origin and force variance to one for each dimension
 
-	covariance = np.dot(standardized, standardized.T)/cols  # X.T*X/(n) 
+	covariance = np.dot(standardized, standardized.T)/cols  # covariance matrix for data
 
-	eigVal, eigVec = la.eig(covariance)  # find unit eigen vectors and eigen values of covariance matrix
+	eigVal, eigVec = la.eig(covariance)  # find unit eigen vectors and corresponding eigen values of covariance matrix
 	order = eigVal.argsort()[::-1]  # sort by descending order
 	eigVal = eigVal[order]
 	eigVec = eigVec[:,order]
 
-	total = eigVal.sum()
+	total = eigVal.sum()  # represents total variance
 
 	if mode == "variance":
 		pcs = 0
@@ -73,10 +73,9 @@ def pca(data, compression):
 		pcs = compression
 	
 	feature = eigVec.copy()[:, 0:pcs]  # compress image by removing columns
-	
-	projected = np.dot(feature.T, standardized)  
-	inverseTransform = la.multi_dot([feature, feature.T, standardized])  # data projected onto principal subspace and then normalized with respect to original basis
-	normalized = np.absolute(inverseTransform*std+mean)  # normalize data by elimating negatives and complex values for image data 
+
+	inverseTransform = la.multi_dot([feature, feature.T, standardized])*std+mean  # data projected onto principal subspace and then normalized with respect to original basis
+	normalized = np.absolute(inverseTransform)  # normalize data by elimating negatives and complex values for image data 
 	return normalized
 
 class Image:
@@ -121,7 +120,7 @@ class Image:
 		self.data = ImageData(self._img)
 		
 
-	def compress(self, compression, preventOverflow=False):
+	def compress(self, compression, preventOverflow=True):
 		timer = time()
 		if self.isRGB:
 			print("\t- RGB: "+str(self.isRGB))
@@ -133,8 +132,7 @@ class Image:
 			d_r, d_g, d_b = pca(r, compression), pca(g, compression), pca(b, compression)
 			
 			if preventOverflow:
-				self.data._data = np.dstack((d_r, d_g, d_b))
-				self.data.toUint8()
+				self.data._data = np.array(np.dstack((d_r, d_g, d_b)).clip(0, 255), dtype=np.uint8)
 			else:
 				self.data._data = np.array(np.dstack((d_r, d_g, d_b)), dtype=np.uint8)
 
@@ -159,12 +157,6 @@ class ImageData:
 	def __init__(self, image):
 		self._data = np.array(image)
 		self.isRGB = len(self.shape) == 3 and self.data.shape[2] == 3
-	
-	def toUint8(self):
-		minimum = self.min()
-		maximum = self.max()
-		diff = maximum-minimum
-		self._data = (((self._data-minimum)/maximum) * 255).astype(np.uint8)
 
 	def __getattr__(self, key):
 		if key == "_data":
