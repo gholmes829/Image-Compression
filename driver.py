@@ -6,44 +6,52 @@ from core.image import Image
 
 class Driver:
 
-	def __init__(self):
+	def __init__(self, argv, argc):
+		self.fileName = None
+		self.mode = None
+		self.compression = None
+		self.convertBW = None
+
+		if argc == 2:
+			self.fileName = argv[1]
+		elif argc == 3:		
+			self.mode = argv[2]
+		elif argc == 4:		
+			self.compression = argv[3]
+		elif argc == 5:
+			self.convertBW = argv[4]
+
 		print("IMAGE COMPRESSOR")
 
-	def run(self, fileName=None, mode=None, compression=None, convertBW=None):
-		if fileName is not None:
+		if self.fileName is None:  # get file name
+			self.fileName = input("\nInput file name (needs to exist in \"images\" directory): ")
+			self.inferred = False
+		else:  # at least 1 parameter passed from command line
+			self.inferred = True
 			print("\nSome parameters inferred from command line arguments")
 
-		if fileName is None:
-			fileName = input("\nInput file name (needs to exist in \"images\" directory): ")
-
-		image = Image(fileName)
-		
-		if convertBW is None:
+		if self.convertBW is None:  # check if user wants to convert
 			convertBW = input("\nConvert image to black and white? (y/n): ")
-			convertBW = convertBW == "y" or convertBW == "Y"
+			self.convertBW = convertBW == "y" or convertBW == "Y"
 		else:
-			convertBW = bool(int(convertBW))
-
-		if convertBW:
-			print("Converting image to black and white...")
-			image.makeBW()
-		
-		if mode is None:
+			self.convertBW = bool(int(self.convertBW))
+	
+		if self.mode is None:  # check which mode user wants to use
 			print("\nWith which parameter would you like to determine compression?")
-			mode = int(input("\t1) Variance\n\t2) Component\n\t3) Qualitative\n\nChoice: "))
+			self.mode = int(input("\t1) Variance\n\t2) Component\n\t3) Qualitative\n\nChoice: "))
 
-		if compression is None:
-			if mode == 1:
+		if self.compression is None:  # get value for compression
+			if self.mode == 1:  # mode is variance
 				print("\t- mode set to \"variance\"...")
-				compression = float(input("\nHow much variance would you like to retain? (0, 100): "))
-				print("\nRetaining approximately " + str(compression) + "% variation")				
+				self.compression = float(input("\nHow much variance would you like to retain? (0, 100): "))
+				print("\nRetaining approximately " + str(self.compression) + "% variation")				
 				
-			elif mode == 2:
+			elif self.mode == 2:  # mode is components
 				print("\t- mode set to \"components\"...")
-				compression = int(input("\nHow many components would you like to use? (0, " + str(image.data.shape[1]) + "): "))
-				print("Using " + str(compression) + " components...")				
+				self.compression = int(input("\nHow many components would you like to use? (0, " + str(image.data.shape[0]) + "): "))
+				print("Using " + str(self.compression) + " components...")				
 			
-			elif mode == 3:
+			elif self.mode == 3:  # mode is qualitative
 				print("\t- mode set to \"qualitative\"...")
 				print("\nSelect degree of compression:")
 				degrees = {
@@ -52,14 +60,23 @@ class Driver:
 					3: "high",
 				}
 
-				compression = degrees[int(input("\t1) Min (retain max quality)\n\t2) Medium\n\t3) High\n\nChoice: "))]
-				print("\t- mode set to \"" + compression + "\"...")	
-		elif int(mode) == 1:
-			compression = float(compression)
-		elif int(mode) == 2:
-			compression = int(compression)
+				self.compression = degrees[int(input("\t1) Min (retain max quality)\n\t2) Medium\n\t3) High\n\nChoice: "))]
+				print("\t- mode set to \"" + self.compression + "\"...")	
+
+		elif int(self.mode) == 1:
+			self.compression = float(self.compression)
+
+		elif int(self.mode) == 2:
+			self.compression = int(self.compression)
+
+	def run(self):
+		image = Image(self.fileName)
+
+		if self.convertBW:
+			print("Converting image to black and white...")
+			image.makeBW()
 		
-		image.compress(compression)
+		image.compress(self.compression)
 
 		print("\nShowing image...")
 		image.show()

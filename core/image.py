@@ -47,40 +47,37 @@ def pca(data, compression):
 	mean, std = data.mean(axis=0), data.std(axis=0)  # mean and std of each column
 	standardized = (data-mean)/std  # variance 1 across each axis
 
-	covariance = np.dot(standardized.T, standardized)/rows  # X.T*X/(n) 
+	covariance = np.dot(standardized, standardized.T)/cols  # X.T*X/(n) 
 
 	eigVal, eigVec = la.eig(covariance)  # find unit eigen vectors and eigen values of covariance matrix
-	order = eigVal.argsort()[::-1]
+	order = eigVal.argsort()[::-1]  # sort by descending order
 	eigVal = eigVal[order]
 	eigVec = eigVec[:,order]
 
-	total = eigVal.sum()	
+	total = eigVal.sum()
 
 	if mode == "variance":
-		components = 0
+		pcs = 0
 		variance = 0
 		percent = 0
 		print("\nTotal possible variance for channel: " + str(round(np.real(total), 3)))
 		while round(percent, 1) < compression:  # need to keep increasing components
-			variance += eigVal[components]
+			variance += eigVal[pcs]
 			percent = (variance/total)*100
-			components += 1
-			print("\t- accumulated variance with " + str(components) + " component(s): " + str(round(np.real(variance), 2)) + " (" + str(round(np.real(percent), 2)) + "%)")
+			pcs += 1
+			print("\t- accumulated variance with " + str(pcs) + " component(s): " + str(round(np.real(variance), 2)) + " (" + str(round(np.real(percent), 2)) + "%)")
 		
-		print("\n\t- using " + str(components) + " components to achieve " + str(round(np.real(percent), 2)) + "% variance\n") 
+		print("\n\t- using " + str(pcs) + " components to achieve " + str(round(np.real(percent), 2)) + "% variance\n") 
 
 	elif mode == "components":
-		components = compression
+		pcs = compression
 	
-	feature = eigVec.copy()
+	feature = eigVec.copy()[:, 0:pcs]  # compress image by removing columns
 	
-	for i in range(1, cols-components + 1):  # compress image by removing columns
-		feature[:,feature.shape[1]-i] = np.zeros(cols).T
-	
-	projected = np.dot(feature.T, standardized.T).T
-	normalized = la.multi_dot([feature, feature.T, standardized.T]).T  # data projected onto principal subspace 
-	restored = np.absolute(normalized*std+mean).astype(np.float64)
-	return restored
+	projected = np.dot(feature.T, standardized)  # data projected onto principal subspace 
+	inverseTransform = la.multi_dot([feature, feature.T, standardized])  # normalize data with respect to original basis
+	normalized = np.absolute(inverseTransform*std+mean)  # normalize data by elimating negatives and complex values for image data 
+	return normalized
 
 class Image:
 	validExt = {".jpg", ".jpeg", ".png", ".tif"}
@@ -111,7 +108,7 @@ class Image:
 
 		print("\nLoading image data from " + self.imagePath)
 		self._img = IM.open(self.imagePath)
-		self.isRGB = self.mode == "RGB"
+		self.isRGB = self._img.mode == "RGB"
 		self.data = ImageData(self._img)
 		
 		print("\t- dimensions of image: " + str(self.data.shape))
@@ -119,7 +116,7 @@ class Image:
 		print("\nImage loaded successfully!")		
 
 	def makeBW(self):
-		self._img = self.convert("L")
+		self._img = self._img.convert("L")
 		self.isRGB = False
 		self.data = ImageData(self._img)
 		
@@ -136,12 +133,12 @@ class Image:
 			d_r, d_g, d_b = pca(r, compression), pca(g, compression), pca(b, compression)
 			self.data._data = np.dstack((d_r, d_g, d_b))
 			self.data.floatToInt()
-			self._img = IM.fromarray(self.data)
+			self._img = IM.fromarray(self.data._data)
 		else:
 			print("\t- by luminosity")
 			self.data._data = pca(self.data._data, compression)
 			self.data.floatToInt()
-			self._img = IM.fromarray(self.data)
+			self._img = IM.fromarray(self.data._data)
 		print("\nOperation took " + str(round(time()-timer, 2)) + " secs")
 
 	def save(self, name):
@@ -149,10 +146,8 @@ class Image:
 		print("\nSaving image to: " + str(self.outputPath) + " as " + name+self.ext)
 		self._img.save(path)
 
-	def __getattr__(self, key):
-		if key == "_img":
-			raise AttributeError()
-		return getattr(self._img, key)
+	def show(self):
+		self._img.show()
 
 class ImageData:
 	
