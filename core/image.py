@@ -74,8 +74,8 @@ def pca(data, compression):
 	
 	feature = eigVec.copy()[:, 0:pcs]  # compress image by removing columns
 	
-	projected = np.dot(feature.T, standardized)  # data projected onto principal subspace 
-	inverseTransform = la.multi_dot([feature, feature.T, standardized])  # normalize data with respect to original basis
+	projected = np.dot(feature.T, standardized)  
+	inverseTransform = la.multi_dot([feature, feature.T, standardized])  # data projected onto principal subspace and then normalized with respect to original basis
 	normalized = np.absolute(inverseTransform*std+mean)  # normalize data by elimating negatives and complex values for image data 
 	return normalized
 
@@ -131,13 +131,20 @@ class Image:
 			
 			print("\t- by channel (r, g, b)")
 			d_r, d_g, d_b = pca(r, compression), pca(g, compression), pca(b, compression)
-			self.data._data = np.dstack((d_r, d_g, d_b))
-			self.data.floatToInt()
+			
+			# Sandy's way
+			#self.data._data[:, :, 0] = d_r	
+			#self.data._data[:, :, 1] = d_g	
+			#self.data._data[:, :, 2] = d_b
+
+			# My way
+			self.data._data = np.array(np.dstack((d_r, d_g, d_b)), dtype=np.uint8)
+
 			self._img = IM.fromarray(self.data._data)
 		else:
 			print("\t- by luminosity")
-			self.data._data = pca(self.data._data, compression)
-			self.data.floatToInt()
+			self.data._data = np.array(pca(self.data._data, compression), dtype=np.uint8)
+			print(self.data._data.dtype)
 			self._img = IM.fromarray(self.data._data)
 		print("\nOperation took " + str(round(time()-timer, 2)) + " secs")
 
@@ -152,15 +159,8 @@ class Image:
 class ImageData:
 	
 	def __init__(self, image):
-		self._data = np.asarray(image)
+		self._data = np.array(image)
 		self.isRGB = len(self.shape) == 3 and self.data.shape[2] == 3
-
-	def floatToInt(self):
-		minimum = self.min()
-		maximum = self.max()
-		diff = maximum-minimum
-		self._data = ((self._data-minimum)/maximum) * 255
-		self._data = self._data.astype(np.uint8)
 	
 	def __getattr__(self, key):
 		if key == "_data":

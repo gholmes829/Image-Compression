@@ -12,13 +12,13 @@ class Driver:
 		self.compression = None
 		self.convertBW = None
 
-		if argc == 2:
+		if argc >= 2:
 			self.fileName = argv[1]
-		elif argc == 3:		
+		if argc >= 3:		
 			self.mode = argv[2]
-		elif argc == 4:		
+		if argc >= 4:		
 			self.compression = argv[3]
-		elif argc == 5:
+		if argc >= 5:
 			self.convertBW = argv[4]
 
 		print("IMAGE COMPRESSOR")
