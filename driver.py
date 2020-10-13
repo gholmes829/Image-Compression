@@ -8,7 +8,7 @@ import os
 class Driver:
 
 	def __init__(self, argv, argc):
-		print("Initializing...\n")		
+		print("Initializing...")		
 
 		self.name = argv[0]
 
@@ -28,6 +28,8 @@ class Driver:
 
 		if argc == 1:
 			print(self.usage())
+			return
+
 		elif argc >= 2:
 			self.source = argv[1]
 			if argc >= 3:
@@ -43,6 +45,8 @@ class Driver:
 									self.preventOverflow = bool(int(argv[6]))
 								except:
 									print("\nWarning: could not interpret prevent overflow arg, setting to True\n")
+					else:
+						print(self.usage())
 
 		if self.source is None or not self.validImageFile(self.source):  # get valid image file name
 			choice = ""
@@ -132,8 +136,14 @@ class Driver:
 				print("\nHow much quality would you like?\n\t1) High\n\t2) Medium\n\t3) Low")
 				while not self.validCompression(self.mode, choice):
 					choice = input("\nChoice: ")
-
-				choice = quality[int(choice)]
+					try:
+						choice = int(choice)
+						try:
+							choice = quality[choice]
+						except KeyError:
+							choice = ""
+					except ValueError:
+						choice = ""
 
 			self.compression = choice
 
@@ -152,7 +162,7 @@ class Driver:
 		self.initialized = True
 				
 	def usage(self) -> str:
-		return  f"""\
+		return  f"""
 {"o"+"="*85+"o"}
 
 {"IMAGE COMPRESSOR!!!"}
@@ -224,10 +234,7 @@ Examples:
 			except ValueError:
 				return False
 		else:  # mode == q
-			try:
-				return int(compression) in {1, 2, 3}
-			except ValueError:
-				return False
+			return compression in {"low", "medium", "high"}
 		
 	def run(self):
 		if not self.initialized:

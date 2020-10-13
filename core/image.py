@@ -20,7 +20,7 @@ class Image:
 	"""
 	def __init__(self, path):
 		self.path = path
-		print("Loading image data from " + self.path)
+		print("\nLoading image data from " + self.path)
 		self._img = IM.open(self.path)
 		self.mode = self._img.mode
 		self.data = ImageData(self._img)
