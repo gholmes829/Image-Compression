@@ -3,125 +3,54 @@
 """
 
 import numpy as np
-import numpy.linalg as la
+
 from PIL import Image as IM
 import matplotlib.pyplot as plt
-import os
 from time import time
 
-"""
-
-Steps:
-	1) Standardize and center data by: (original data - mean)/standard deviation
-	2) Compute covariance matrix
-	3) Compute eigen vectors and eigen values of covariance matrix (make sure eigen vectors are unit vectors)
-	4) Order eigen vectors
-	5) Use input to decide how much to reduce dimensions and create feature matrix
-	6) Recast data by: new data = FM*FM^T*modded data*standard deviation + mean
-
-Notes:
-	- Calculate percent accuracy by looking at sum(eigenvalues for feature matrix)/sum(eigenvalues of covariance matrix)
-	- Calculate error (?)
-	- Consider complexity of operation, both as a whole and with images of different sizes/ color channels
-	- Compare with SVD (?)
-"""
-
-def pca(data, compression):
-	if type(compression) == float:
-		mode = "variance"
-	elif type(compression) == int:
-		mode = "components"
-	elif type(compression) == str:
-		mode = "degree"
-		percentVar = {
-			"min": 99.99,
-			"medium": 97.5,
-			"high": 92.5,
-		}
-		
-		print("\nUsing approximately " + str(percentVar[compression]) + "% variance for \"" + compression + "\" compression")
-		return pca(data, percentVar[compression])
-
-	rows, cols = data.shape
-
-	mean, std = data.mean(axis=0), data.std(axis=0)  # mean and std of each column
-	standardized = (data-mean)/std  # center data at origin and force variance to one for each dimension
-
-	covariance = np.dot(standardized, standardized.T)/cols  # covariance matrix for data
-
-	eigVal, eigVec = la.eig(covariance)  # find unit eigen vectors and corresponding eigen values of covariance matrix
-	order = eigVal.argsort()[::-1]  # sort by descending order
-	eigVal = eigVal[order]
-	eigVec = eigVec[:,order]
-
-	total = eigVal.sum()  # represents total variance
-
-	if mode == "variance":
-		pcs = 0
-		variance = 0
-		percent = 0
-		print("\nTotal possible variance for channel: " + str(round(np.real(total), 3)))
-		while round(percent, 1) < compression:  # need to keep increasing components
-			variance += eigVal[pcs]
-			percent = (variance/total)*100
-			pcs += 1
-			print("\t- accumulated variance with " + str(pcs) + " component(s): " + str(round(np.real(variance), 2)) + " (" + str(round(np.real(percent), 2)) + "%)")
-		
-		print("\n\t- using " + str(pcs) + " components to achieve " + str(round(np.real(percent), 2)) + "% variance\n") 
-
-	elif mode == "components":
-		pcs = compression
-	
-	feature = eigVec.copy()[:, 0:pcs]  # compress image by removing columns
-
-	inverseTransform = la.multi_dot([feature, feature.T, standardized])*std+mean  # data projected onto principal subspace and then normalized with respect to original basis
-	normalized = np.absolute(inverseTransform)  # normalize data by elimating negatives and complex values for image data 
-	return normalized
+from core.decomposition import pca, svd
 
 class Image:
-	validExt = {".jpg", ".jpeg", ".png", ".tif"}
-
-	def __init__(self, fileName):
-		self.resourcePath = os.path.join(os.getcwd(), "images")
-		self.outputPath = os.path.join(os.getcwd(), "output")
-		self.imagePath = os.path.join(self.resourcePath, fileName)
-
-		availableImages = os.listdir(self.resourcePath)
-
-		if fileName not in availableImages:
-			raise ValueError("\"" + fileName + "\" is not in images folder! Add file to images folder to use.")
-
-		self.ext = None
-
-		for ext in Image.validExt:
-			if ext in fileName:
-				valid = True
-				for i in range(1, len(ext)+1):
-					if fileName[-1*i] != ext[-1*i]:
-						valid = False
-				if valid:
-					self.ext = ext
-		
-		if self.ext is None:
-			raise ValueError("Invalid extension for file: " + fileName)
-
-		print("\nLoading image data from " + self.imagePath)
-		self._img = IM.open(self.imagePath)
-		self.isRGB = self._img.mode == "RGB"
+	
+	def __init__(self, path):
+		self.path = path
+		print("Loading image data from " + self.path)
+		self._img = IM.open(self.path)
+		self.mode = self._img.mode
 		self.data = ImageData(self._img)
 		
+		print("\nImage loaded successfully!")
 		print("\t- dimensions of image: " + str(self.data.shape))
-		print("\t- image mode: " + self._img.mode)
-		print("\nImage loaded successfully!")		
+		print("\t- image mode: " + self.mode)
 
-	def makeBW(self):
-		self._img = self._img.convert("L")
-		self.isRGB = False
-		self.data = ImageData(self._img)
-		
+	def compress(self, algorithm, mode, compression, preventOverflow=True):
+		variances = {
+			"low": 90.,
+			"medium": 95.,
+			"high": 99.99,
+		}
 
-	def compress(self, compression, preventOverflow=True):
+		algorithms = {
+			"pca": pca,
+			"svd": svd,
+		}
+
+		algorithm = algorithms[algorithm]
+
+		if mode == "q":
+			mode = "v"
+			compression = variances[compression]
+
 		timer = time()
+		
+		if preventOverflow:
+			for channel in range(0, len(self._img.getbands())):
+				self.data._data[:, :, channel] = algorithm(self.data._data[:, :, channel], mode, compression).clip(0, 255)
+		else:
+			for channel in range(0, len(self._img.getbands())):
+				self.data._data[:, :, channel] = algorithm(self.data._data[:, :, channel], mode, compression).astype(np.uint8)
+
+		"""
 		if self.isRGB:
 			print("\t- RGB: "+str(self.isRGB))
 			r = self.data._data[:,:,0]
@@ -142,11 +71,12 @@ class Image:
 			self.data._data = np.array(pca(self.data._data, compression), dtype=np.uint8)
 			print(self.data._data.dtype)
 			self._img = IM.fromarray(self.data._data)
+		"""
+		self._img = IM.fromarray(self.data._data)
 		print("\nOperation took " + str(round(time()-timer, 2)) + " secs")
 
-	def save(self, name):
-		path = os.path.join(self.outputPath, name+self.ext)
-		print("\nSaving image to: " + str(self.outputPath) + " as " + name+self.ext)
+	def save(self, path):
+		print("\nSaving image as: " + str(path))
 		self._img.save(path)
 
 	def show(self):

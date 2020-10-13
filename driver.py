@@ -1,104 +1,244 @@
 """
-
+Driver to handle inputs and configure compression.
 """
 
 from core.image import Image
+import os
 
 class Driver:
 
 	def __init__(self, argv, argc):
-		self.fileName = None
+		print("Initializing...\n")		
+
+		self.name = argv[0]
+
+		self.source = None
+		self.algorithm = None
 		self.mode = None
 		self.compression = None
-		self.convertBW = None
+		self.target = None
+		self.preventOverflow = True
 
-		if argc >= 2:
-			self.fileName = argv[1]
-		if argc >= 3:		
-			self.mode = argv[2]
-		if argc >= 4:		
-			self.compression = argv[3]
-		if argc >= 5:
-			self.convertBW = argv[4]
+		self.validExt = {".jpg", ".jpeg", ".png", ".tif"}
 
-		print("IMAGE COMPRESSOR")
+		self.resourcePath = os.path.join(os.getcwd(), "images")
+		self.outputPath = os.path.join(os.getcwd(), "output")
 
-		if self.fileName is None:  # get file name
-			self.fileName = input("\nInput file name (needs to exist in \"images\" directory): ")
-			self.inferred = False
-		else:  # at least 1 parameter passed from command line
-			self.inferred = True
-			print("\nSome parameters inferred from command line arguments")
+		self.initialized = False
 
-		if self.convertBW is None:  # check if user wants to convert
-			convertBW = input("\nConvert image to black and white? (y/n): ")
-			self.convertBW = convertBW == "y" or convertBW == "Y"
+		if argc == 1:
+			print(self.usage())
+		elif argc >= 2:
+			self.source = argv[1]
+			if argc >= 3:
+				self.algorithm = argv[2]
+				if argc >= 4:
+					self.mode = argv[3]
+					if argc >= 5:
+						self.compression = argv[4]
+						if argc >= 6:
+							self.target = argv[5]
+							if argc == 7:
+								try:
+									self.preventOverflow = bool(int(argv[6]))
+								except:
+									print("\nWarning: could not interpret prevent overflow arg, setting to True\n")
+
+		if self.source is None or not self.validImageFile(self.source):  # get valid image file name
+			choice = ""
+			while not self.validImageFile(choice):
+				print("\nSelect valid file from \"images\" folder or add more and restart.")
+				available = os.listdir(self.resourcePath)
+				if len(available) == 0:
+					print("No images in \"images\" folder. You need to add more and try again...")
+					return
+				else:
+					for imageName in available:
+						print("\t- " + imageName)
+				choice = input("\nChoice: ")
+
+			self.source = os.path.join(self.resourcePath, choice)
 		else:
-			self.convertBW = bool(int(self.convertBW))
-	
-		if self.mode is None:  # check which mode user wants to use
-			print("\nWith which parameter would you like to determine compression?")
-			self.mode = int(input("\t1) Variance\n\t2) Component\n\t3) Qualitative\n\nChoice: "))
+			self.source = os.path.join(self.resourcePath, self.source)
 
-		if self.compression is None:  # get value for compression
-			if self.mode == 1:  # mode is variance
-				print("\t- mode set to \"variance\"...")
-				self.compression = float(input("\nHow much variance would you like to retain? (0, 100): "))
-				print("\nRetaining approximately " + str(self.compression) + "% variation")				
-				
-			elif self.mode == 2:  # mode is components
-				print("\t- mode set to \"components\"...")
-				self.compression = int(input("\nHow many components would you like to use? (0, " + str(image.data.shape[0]) + "): "))
-				print("Using " + str(self.compression) + " components...")				
+		self.image = Image(self.source)
+	
+		if self.algorithm is None or self.algorithm not in {"pca", "svd"}:  # check which algorithm user wants to use
+			choice = 0
+			options = {"1", "2"}
+		
+			print("\nWhich algorithm would you like to use?\n\t1) PCA\n\t2) SVD")
+
+			while choice not in options:
+				choice = input("\nChoice: ")
 			
-			elif self.mode == 3:  # mode is qualitative
-				print("\t- mode set to \"qualitative\"...")
-				print("\nSelect degree of compression:")
-				degrees = {
-					1: "min",
+			if choice == "1":
+				self.algorithm = "pca"
+			else:  # choice == "2"
+				self.algorithm = "svd"
+
+		if self.algorithm == "svd" and not (self.mode is None or self.mode == "c"):
+			print("Invalid mode for SVD. Setting mode to \"components\".")
+			self.mode = "c"
+			self.compression = None
+
+		if self.mode is None or self.mode not in {"v", "c", "q"}:  # check which mode user wants to use
+			if self.algorithm == "pca":
+				choice = 0
+				options = {"v", "c", "q"}
+				
+				print("\nWith which parameter would you like to determine compression?\n\tv) Variance\n\tc) Component\n\tq) Qualitative")
+
+				while choice not in options:
+					choice = input("\nChoice: ")
+
+			else:  # self.algorithm == "svd"
+				choice = "c"
+	
+			self.mode = choice
+		
+
+		if self.compression is None or not self.validCompression(self.mode, self.compression):  # get value for compression
+			if self.mode == "v":  # mode is variance
+				
+				choice = -1
+
+				print("\nHow much variance would you like to retain? (0, 100): ")		
+	
+				while not self.validCompression(self.mode, choice): 
+					choice = input("\nChoice: ")
+
+				choice = float(choice)
+				
+			elif self.mode == "c":  # mode is components
+				choice = -1
+
+				print("\nHow many components would you like to use? (0, " + str(self.image.data.shape[0]) + "): ")
+				while not self.validCompression(self.mode, choice):
+					choice = input("\nChoice: ")
+
+				choice = int(choice)	
+			
+			else:  # mode is qualitative
+				
+				quality = {
+					1: "high",
 					2: "medium",
-					3: "high",
+					3: "low",
 				}
 
-				self.compression = degrees[int(input("\t1) Min (retain max quality)\n\t2) Medium\n\t3) High\n\nChoice: "))]
-				print("\t- mode set to \"" + self.compression + "\"...")	
+				choice = ""
+				
+				print("\nHow much quality would you like?\n\t1) High\n\t2) Medium\n\t3) Low")
+				while not self.validCompression(self.mode, choice):
+					choice = input("\nChoice: ")
 
-		elif int(self.mode) == 1:
+				choice = quality[int(choice)]
+
+			self.compression = choice
+
+		elif self.mode == "v":  # compression passed through command line
 			self.compression = float(self.compression)
 
-		elif int(self.mode) == 2:
+		elif self.mode == "c":  # compression passed through command line
 			self.compression = int(self.compression)
 
+		if self.target is not None:
+			choice = self.target
+			while not self.validExtension(choice):
+				choice = input("\nInput valid target file name: ")
+			self.target = choice
+	
+		self.initialized = True
+				
+	def usage(self):
+		return  f"""\
+{"o"+"="*85+"o"}
+
+{"IMAGE COMPRESSOR!!!"}
+
+Usage: {self.name} [SOURCE] [ALGORITHM] [MODE] [COMPRESSION] [TARGET] [PREVENT OVERFLOW]
+
+Run image compression on image with valid extension: {self.validExt}
+
+Algorithms:
+	pca: Principal Component Analysis
+	svd: Singular Value Decomposition
+
+Modes:
+	v: Select a percentage of variance to keep. Only valid if mode=pca.    
+	c: Select a number of components to keep.
+	q: Select compression level from predefined settings. Only valid if mode=pca.  
+
+Compression:
+	Mode:
+		v -> float between 0 and 100
+		c -> int
+		q -> Either low, medium, or high quality
+
+Target:
+	file name: name with valid extension which will be saved to "output" folder
+	
+	Note: If you would rather show the image but not save, omit this argument
+
+Prevent Overflow:
+	0: False, values of pixels on one or more channels may overflow, resulting in cool noise
+	1: True, prevent cool noise and retain maximum image quality
+
+Examples:
+	{self.name} tiger.jpg pca 1 95 tiger_var95_pca.tif 0
+	{self.name} flower.jpg svd 3 min flower_qualMin_svd.jpg 1
+
+{"o"+"="*85+"o"}"""
+
+	def validImageFile(self, fileName):
+		availableImages = os.listdir(self.resourcePath)
+		exists = fileName in availableImages
+		extValid = self.validExtension(fileName)
+
+		return exists and extValid
+
+	def validExtension(self, fileName):
+		extValid = False		
+
+		for ext in self.validExt:
+			if ext in fileName:
+				valid = True
+				for i in range(1, len(ext)+1):
+					if fileName[-1*i] != ext[-1*i]:
+						valid = False
+				if valid:
+					return True
+		return False
+	
+	def validCompression(self, mode, compression):
+		if mode == "v":
+			try:
+				return (0 <= float(compression) <= 100)
+			except ValueError:
+				return False
+				
+		elif mode == "c":
+			try:
+				return (0 <= int(compression) <= self.image.data.shape[0])
+			except ValueError:
+				return False
+		else:  # mode == q
+			try:
+				return int(compression) in {1, 2, 3}
+			except ValueError:
+				return False
+		
 	def run(self):
-		image = Image(self.fileName)
+		if not self.initialized:
+			return
 
-		if self.convertBW:
-			print("Converting image to black and white...")
-			image.makeBW()
-		
-		image.compress(self.compression)
-
-		print("\nShowing image...")
-		image.show()
-
-		shouldSave = input("\nSave compressed image? (y/n): ")
-		shouldSave = shouldSave == "y" or shouldSave == "Y"
-
-		if shouldSave:
-			name = input("\nEnter name to save image as (no extensions): ")
-			print("\t- saving image as \"" + name + "\"...")
-			image.save(name)
-
-		
-		
-		#toTest = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 16, 18, 20, 25, 30, 40, 50, 60, 70, 80, 90, 100, 125, 150, 175, 200, 300, 400, 800]
-		
-		#for c in toTest:
-			#image = Image(fileName)
-			#image.makeBW()
-			#image.compress(c)
-			#image.save("test#"+str(c))
-			#image.show()
-		
-		
+		self.image.compress(self.algorithm, self.mode, self.compression, self.preventOverflow)
+	
+		if self.target is not None:
+			path = os.path.join(self.outputPath, self.target)
+			self.image.save(path)
+		else:
+			print("\nShowing image...")
+			self.image.show()
 
