@@ -47,10 +47,13 @@ class Image:
 			mode = "v"
 			compression = variances[compression]
 
+		channels = self._img.getbands()
+
 		timer = time()
-		
+
 		if preventOverflow:
-			for channel in range(0, len(self._img.getbands())):
+			for channel in range(0, len(channels)):
+				print("\nCALCULATING: [" + str(channels[channel]) + "]")
 				self.data._data[:, :, channel] = algorithm(self.data._data[:, :, channel], mode, compression).clip(0, 255)
 		else:
 			for channel in range(0, len(self._img.getbands())):

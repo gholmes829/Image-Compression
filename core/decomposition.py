@@ -42,7 +42,12 @@ def pca(data: np.array, mode="v", compression=99.99) -> np.array:
 			variance += eigVal[pcs]
 			percent = (variance/total)*100
 			pcs += 1
-			print("\t- accumulated variance with " + str(pcs) + " component(s): " + str(round(np.real(variance), 2)) + " (" + str(round(np.real(percent), 2)) + "%)")
+			if ((np.real(percent) < 50 or np.real(percent) >= 99.95 or np.real(percent) >= compression) and pcs%1==0) \
+				or (50 <= np.real(percent) < 70 and pcs%2==0) \
+				or (70 <= np.real(percent) < 85 and pcs%3==0) \
+				or (85 <= np.real(percent) < 95 and pcs%5==0) \
+				or (95 <= np.real(percent) < 99 and pcs%10==0):
+				print("\t- accumulated " + str(pcs) + " component(s): " + str(round(np.real(variance), 2)) + " (" + str(round(np.real(percent), 2)) + "%)")
 		
 		print("\n\t- using " + str(pcs) + " components to achieve " + str(round(np.real(percent), 2)) + "% variance\n") 
 

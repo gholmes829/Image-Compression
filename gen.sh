@@ -1,27 +1,47 @@
-#!/bin/sh
+#!/bin/bash
 
-#generates compressed images
-#usage ./gen.sh file alg start stop step
-
-start=$3
-finish=$(($4 + 1))
-step=$5
+# generates compressed images
+# usage ./gen.sh file alg start stop step protectOverflow
+# see ./__main__ usage for more details
 
 FILE=$1
+alg=$2
+mode=$3
+
+curr=$4
+stop=$(($5 + 1))
+step=$6
+
+protectOverflow=$7
 
 name=${FILE%%.*}
 ext=${FILE##*.}
 
-alg=$2
+directory=${name}\_${alg}\_${mode}\_${protectOverflow}
 
-directory=${name}\_$alg
+endl=$'\n'
 
 mkdir -p ./output/$directory
 
-while [ $start -lt $finish ]
+echo "GENERATING IMAGES:${endl}"
+
+while [ $curr -lt $stop ]
 do
-    echo Running for \#components = ${start}
-    ./__main__.py $FILE $alg c $start ${directory}/${name}\_${alg}\_${start}.$ext
-    start=`expr $start + $step`
+    echo "Running iteration: Value = ${curr}"
+	output=${name}\_${curr}.$ext
+	path=${directory}/${output}
+
+	if [[ !( -f "output/${path}") ]]
+	then
+		echo ${endl}
+    	./__main__.py $FILE $alg $mode $curr ${path} $protectOverflow
+		echo "${endl}Done.${endl}${endl}${endl}"
+	else
+	 echo "${output} already exists, skipping iteration...${endl}"
+	fi
+    curr=$(($curr + $step))
 
 done
+
+echo "SCRIPT COMPLETED"
+

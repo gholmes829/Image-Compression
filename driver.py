@@ -7,10 +7,21 @@ import os
 
 class Driver:
 
-	def __init__(self, argv, argc):
-		print("Initializing...")		
-
+	def __init__(self, argv: list, argc: int):
+		"""
+		argv: ./__main__.py [SOURCE] [ALGORITHM] [MODE] [COMPRESSION] [TARGET] [PREVENT OVERFLOW]
+		"""
 		self.name = argv[0]
+		self.validExt = (".jpg", ".jpeg", ".png", ".tif")
+		self.initialized = False
+			
+		if argc == 2:
+			print(self.usage() + "\n")
+		elif argc == 1 or argc > 7:
+			print(self.usage())
+			return
+
+		print("Initializing...")		
 
 		self.source = None
 		self.algorithm = None
@@ -19,18 +30,10 @@ class Driver:
 		self.target = None
 		self.preventOverflow = True
 
-		self.validExt = {".jpg", ".jpeg", ".png", ".tif"}
-
 		self.resourcePath = os.path.join(os.getcwd(), "images")
 		self.outputPath = os.path.join(os.getcwd(), "output")
 
-		self.initialized = False
-
-		if argc == 1:
-			print(self.usage())
-			return
-
-		elif argc >= 2:
+		if argc >= 2:
 			self.source = argv[1]
 			if argc >= 3:
 				self.algorithm = argv[2]
@@ -45,8 +48,6 @@ class Driver:
 									self.preventOverflow = bool(int(argv[6]))
 								except:
 									print("\nWarning: could not interpret prevent overflow arg, setting to True\n")
-					else:
-						print(self.usage())
 
 		if self.source is None or not self.validImageFile(self.source):  # get valid image file name
 			choice = ""
@@ -162,12 +163,18 @@ class Driver:
 		self.initialized = True
 				
 	def usage(self) -> str:
-		return  f"""
+		return  f"""\
 {"o"+"="*85+"o"}
-
 {"IMAGE COMPRESSOR!!!"}
 
-Usage: {self.name} [SOURCE] [ALGORITHM] [MODE] [COMPRESSION] [TARGET] [PREVENT OVERFLOW]
+Runs lossy image compression on images with choice parameters.
+
+Usage:
+	{self.name} [SOURCE] [ALGORITHM] [MODE] [COMPRESSION] [TARGET] [PREVENT OVERFLOW]
+	{self.name} [SOURCE] [ALGORITHM] [MODE] [COMPRESSION]
+	{self.name} [SOURCE]
+
+Note: If the former is used, user will complete parameters through terminal
 
 Run image compression on image with valid extension: {self.validExt}
 
@@ -180,8 +187,8 @@ Modes:
 	c: Select a number of components to keep.
 	q: Select compression level from predefined settings. Only valid if mode=pca.  
 
-Compression:
-	Mode:
+Compression ranges:
+	Given mode...
 		v -> float between 0 and 100
 		c -> int
 		q -> Either low, medium, or high quality
@@ -193,11 +200,12 @@ Target:
 
 Prevent Overflow:
 	0: False, values of pixels on one or more channels may overflow, resulting in cool noise
-	1: True, prevent cool noise and retain maximum image quality
+	1: True, prevent cool noise but retain maximum image quality
 
 Examples:
-	{self.name} tiger.jpg pca 1 95 tiger_var95_pca.tif 0
-	{self.name} flower.jpg svd 3 min flower_qualMin_svd.jpg 1
+	{self.name} tiger.jpg pca 1 95 tiger_pca_v_95.tif 0
+	{self.name} flower.jpg svd 3 min
+	{self.name} knight.png
 
 {"o"+"="*85+"o"}"""
 
