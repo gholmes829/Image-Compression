@@ -1,8 +1,8 @@
 # PCA-Image-Compression
 
-Usage: ./\__main__.py [SOURCE] [ALGORITHM] [MODE] [COMPRESSION] [TARGET] [PREVENT OVERFLOW]
+Usage: ./\__main__.py [SOURCE] [ALGORITHM] [MODE] [COMPRESSION] [TARGET] [PREVENT OVERFLOW]\
 \
-Run image compression on image with valid extension: {'.png', '.tif', '.jpeg', '.jpg'}
+Run image compression on image with valid extension: {'.png', '.tif', '.jpeg', '.jpg'}\
 \
 Algorithms:\
 	pca: Principal Component Analysis\
@@ -21,11 +21,11 @@ Compression:\
 \
 Target:
 	file name: name with valid extension which will be saved to "output" folder\
-	Note: If you would rather show the image but not save, omit this argument
+	Note: If you would rather show the image but not save, omit this argument\
 \
 Prevent Overflow:\
-	0: False, values of pixels on one or more channels may overflow, resulting in cool noise
-	1: True, prevent cool noise and retain maximum image quality
+	0: False, values of pixels on one or more channels may overflow, resulting in cool noise\
+	1: True, prevent cool noise and retain maximum image quality\
 \
 Examples:\
 	./\__main__.py tiger.jpg pca 1 95 tiger_var95_pca.tif 0\
