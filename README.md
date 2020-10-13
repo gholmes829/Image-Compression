@@ -19,7 +19,7 @@ Compression:\
 		c -> int\
 		q -> Either low, medium, or high quality\
 \
-Target:
+Target:\
 	file name: name with valid extension which will be saved to "output" folder\
 	Note: If you would rather show the image but not save, omit this argument\
 \
