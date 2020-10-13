@@ -21,7 +21,6 @@ Compression:
 
 Target:
 	file name: name with valid extension which will be saved to "output" folder
-	\
 	Note: If you would rather show the image but not save, omit this argument
 
 Prevent Overflow:
@@ -29,5 +28,5 @@ Prevent Overflow:
 	1: True, prevent cool noise and retain maximum image quality
 
 Examples:
-	./__main__.py tiger.jpg pca 1 95 tiger_var95_pca.tif 0
-	./__main__.py flower.jpg svd 3 min flower_qualMin_svd.jpg 1
+	./\__main__.py tiger.jpg pca 1 95 tiger_var95_pca.tif 0
+	./\__main__.py flower.jpg svd 3 min flower_qualMin_svd.jpg 1
