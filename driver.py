@@ -151,7 +151,7 @@ class Driver:
 	
 		self.initialized = True
 				
-	def usage(self):
+	def usage(self) -> str:
 		return  f"""\
 {"o"+"="*85+"o"}
 
@@ -191,14 +191,14 @@ Examples:
 
 {"o"+"="*85+"o"}"""
 
-	def validImageFile(self, fileName):
+	def validImageFile(self, fileName: str) -> bool:
 		availableImages = os.listdir(self.resourcePath)
 		exists = fileName in availableImages
 		extValid = self.validExtension(fileName)
 
 		return exists and extValid
 
-	def validExtension(self, fileName):
+	def validExtension(self, fileName: str) -> bool:
 		extValid = False		
 
 		for ext in self.validExt:
@@ -211,7 +211,7 @@ Examples:
 					return True
 		return False
 	
-	def validCompression(self, mode, compression):
+	def validCompression(self, mode: str, compression: int or float or str) -> bool:
 		if mode == "v":
 			try:
 				return (0 <= float(compression) <= 100)

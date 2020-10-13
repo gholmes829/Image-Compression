@@ -1,7 +1,15 @@
+"""
+Popular matrix decompositions for lossy image compression.
+
+Methods:
+	PCA
+	SVD
+"""
+
 import numpy as np
 import numpy.linalg as la
 
-def pca(data, mode="v", compression=99.99) -> np.array:
+def pca(data: np.array, mode="v", compression=99.99) -> np.array:
 	"""
 	mode:
 		v: Select a percentage of variance to keep. Only valid if mode=pca.    
@@ -48,7 +56,7 @@ def pca(data, mode="v", compression=99.99) -> np.array:
 	normalized = np.absolute(inverseTransform)  # normalize data by elimating negatives and complex values for image data 
 	return normalized
 
-def svd(data, mode="c", k=1):
+def svd(data: np.array, mode="c", k=1) -> np.array:
 	U, s, V = np.linalg.svd(data)
 	k = np.min((k, s.shape[0]))
 	

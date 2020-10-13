@@ -1,5 +1,9 @@
 """
+Contains classes to manage image and image data.
 
+Classes:
+	Image
+	Image data
 """
 
 import numpy as np
@@ -11,7 +15,9 @@ from time import time
 from core.decomposition import pca, svd
 
 class Image:
-	
+	"""
+	Wrapper for PIL Image
+	"""
 	def __init__(self, path):
 		self.path = path
 		print("Loading image data from " + self.path)
@@ -23,7 +29,7 @@ class Image:
 		print("\t- dimensions of image: " + str(self.data.shape))
 		print("\t- image mode: " + self.mode)
 
-	def compress(self, algorithm, mode, compression, preventOverflow=True):
+	def compress(self, algorithm: str, mode: str, compression: str or int or float, preventOverflow=True):
 		variances = {
 			"low": 90.,
 			"medium": 95.,
@@ -50,32 +56,10 @@ class Image:
 			for channel in range(0, len(self._img.getbands())):
 				self.data._data[:, :, channel] = algorithm(self.data._data[:, :, channel], mode, compression).astype(np.uint8)
 
-		"""
-		if self.isRGB:
-			print("\t- RGB: "+str(self.isRGB))
-			r = self.data._data[:,:,0]
-			g = self.data._data[:,:,1]
-			b = self.data._data[:,:,2]
-			
-			print("\t- by channel (r, g, b)")
-			d_r, d_g, d_b = pca(r, compression), pca(g, compression), pca(b, compression)
-			
-			if preventOverflow:
-				self.data._data = np.array(np.dstack((d_r, d_g, d_b)).clip(0, 255), dtype=np.uint8)
-			else:
-				self.data._data = np.array(np.dstack((d_r, d_g, d_b)), dtype=np.uint8)
-
-			self._img = IM.fromarray(self.data._data)
-		else:
-			print("\t- by luminosity")
-			self.data._data = np.array(pca(self.data._data, compression), dtype=np.uint8)
-			print(self.data._data.dtype)
-			self._img = IM.fromarray(self.data._data)
-		"""
 		self._img = IM.fromarray(self.data._data)
 		print("\nOperation took " + str(round(time()-timer, 2)) + " secs")
 
-	def save(self, path):
+	def save(self, path: str):
 		print("\nSaving image as: " + str(path))
 		self._img.save(path)
 
@@ -83,7 +67,9 @@ class Image:
 		self._img.show()
 
 class ImageData:
-	
+	"""
+	Wrapper for np.array
+	"""
 	def __init__(self, image):
 		self._data = np.array(image)
 		self.isRGB = len(self.shape) == 3 and self.data.shape[2] == 3
