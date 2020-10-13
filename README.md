@@ -3,8 +3,8 @@
 Runs lossy image compression on images with choice parameters.  
   
 ## Usage:
-> ./\__main__.py [SOURCE] [ALGORITHM] [MODE] [COMPRESSION] [TARGET] [PREVENT OVERFLOW]  
-> ./\__main__.py [SOURCE]  
+* ./\__main__.py [SOURCE] [ALGORITHM] [MODE] [COMPRESSION] [TARGET] [PREVENT OVERFLOW]  
+* ./\__main__.py [SOURCE]  
 
 _Note: If the former is used, user will complete parameters through terminal_
   
@@ -29,8 +29,8 @@ _Note: If using algorithm=svd, only mode=c is valid_
 ## Compression:
 Compression | Mode=v | Mode=c | Mode=q
 ------------|--------|--------|-------
-Type and Range | float between 0 and 100 | int between zero and image height | low, medium, or high
-Valid for | pca | pca, svd | pca
+**Type and Range** | float between 0 and 100 | int between zero and image height | low, medium, or high
+**Valid for** | pca | pca, svd | pca
 
 ## Target:
 * file name: name with valid extension which will be saved to "output" folder
