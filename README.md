@@ -1,6 +1,6 @@
 # PCA-Image-Compression
 
-Usage: ./__main__.py [SOURCE] [ALGORITHM] [MODE] [COMPRESSION] [TARGET] [PREVENT OVERFLOW]
+Usage: ./\__main__.py [SOURCE] [ALGORITHM] [MODE] [COMPRESSION] [TARGET] [PREVENT OVERFLOW]
 
 Run image compression on image with valid extension: {'.png', '.tif', '.jpeg', '.jpg'}
 
@@ -21,7 +21,7 @@ Compression:
 
 Target:
 	file name: name with valid extension which will be saved to "output" folder
-	
+	\
 	Note: If you would rather show the image but not save, omit this argument
 
 Prevent Overflow:
