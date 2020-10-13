@@ -5,8 +5,8 @@ Usage: ./\__main__.py [SOURCE] [ALGORITHM] [MODE] [COMPRESSION] [TARGET] [PREVEN
 Run image compression on image with valid extension: {'.png', '.tif', '.jpeg', '.jpg'}\
 \
 Algorithms:\
-    pca: Principal Component Analysis\
-    svd: Singular Value Decomposition\
+        pca: Principal Component Analysis\
+        svd: Singular Value Decomposition\
 \
 Modes:\
 	v: Select a percentage of variance to keep. Only valid if mode=pca.\
