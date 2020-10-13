@@ -1,6 +1,5 @@
 # PCA-Image-Compression
-
-o=====================================================================================o
+  
 IMAGE COMPRESSOR!!!
   
 Usage:  
@@ -39,5 +38,3 @@ Examples:
 > ./\__main__.py tiger.jpg pca 1 95 tiger_pca_v_95.tif 0
 > ./\__main__.py flower.jpg svd 3 min
 > ./\__main__.py knight.png
-
-o=====================================================================================o
