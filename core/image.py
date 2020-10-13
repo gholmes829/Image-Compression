@@ -7,7 +7,7 @@ Classes:
 """
 
 import numpy as np
-
+from pathlib import Path
 from PIL import Image as IM
 import matplotlib.pyplot as plt
 from time import time
@@ -20,16 +20,17 @@ class Image:
 	"""
 	def __init__(self, path):
 		self.path = path
+		self.name = Path(self.path).stem
 		print("\nLoading image data from " + self.path)
 		self._img = IM.open(self.path)
 		self.mode = self._img.mode
 		self.data = ImageData(self._img)
-		
+
 		print("\nImage loaded successfully!")
 		print("\t- dimensions of image: " + str(self.data.shape))
 		print("\t- image mode: " + self.mode)
 
-	def compress(self, algorithm: str, mode: str, compression: str or int or float, preventOverflow=True):
+	def compress(self, algorithm: str, mode: str, compression: str or int or float, preventOverflow: bool, log=False):
 		variances = {
 			"low": 90.,
 			"medium": 95.,
@@ -53,11 +54,19 @@ class Image:
 
 		if preventOverflow:
 			for channel in range(0, len(channels)):
+				if log:
+					name = self.name+"_"+algorithm.__name__+"_"+mode+"_"+str(int(compression))+"_"+channels[channel]+"_"+str(int(preventOverflow))
+				else:
+					name = None
 				print("\nCALCULATING: [" + str(channels[channel]) + "]")
-				self.data._data[:, :, channel] = algorithm(self.data._data[:, :, channel], mode, compression).clip(0, 255)
+				self.data._data[:, :, channel] = algorithm(self.data._data[:, :, channel], mode, compression, log=name).clip(0, 255)
 		else:
 			for channel in range(0, len(self._img.getbands())):
-				self.data._data[:, :, channel] = algorithm(self.data._data[:, :, channel], mode, compression).astype(np.uint8)
+				if log:
+					name = self.name+"_"+algorithm.__name__+"_"+mode+"_"+str(int(compression))+"_"+channels[channel]+"_"+str(int(preventOverflow))
+				else:
+					log=None
+				self.data._data[:, :, channel] = algorithm(self.data._data[:, :, channel], mode, compression, log=name).astype(np.uint8)
 
 		self._img = IM.fromarray(self.data._data)
 		print("\nOperation took " + str(round(time()-timer, 2)) + " secs")

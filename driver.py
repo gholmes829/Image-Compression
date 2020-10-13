@@ -248,7 +248,7 @@ Examples:
 		if not self.initialized:
 			return
 
-		self.image.compress(self.algorithm, self.mode, self.compression, self.preventOverflow)
+		self.image.compress(self.algorithm, self.mode, self.compression, self.preventOverflow, log=True)
 	
 		if self.target is not None:
 			path = os.path.join(self.outputPath, self.target)
