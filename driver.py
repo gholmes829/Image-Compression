@@ -241,8 +241,8 @@ Target:
 	Optional
 
 Examples:
-	{self.name} tiger.jpg pca 1 95 tiger_pca_v_95.tif 0
-	{self.name} flower.jpg svd 3 min
+	{self.name} tiger.jpg pca 1 95 1 0 tiger_pca_v_95.tif
+	{self.name} flower.jpg svd 3 min 1
 	{self.name} knight.png
 
 {"o"+"="*85+"o"}"""
