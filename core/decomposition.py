@@ -88,7 +88,7 @@ def svd(data: np.array, mode="c", k=1, log=None) -> np.array:
 	"""
 	U, S, V = np.linalg.svd(data)
 	k = np.min((k, S.shape[0]))
-	
+
 	total = np.sum(S)
 
 	if log is not None:
