@@ -44,4 +44,4 @@ _Note: If you would rather show the image but not save, omit this argument_
 ## Examples:
 *  `./__main__.py tiger.jpg pca 1 95 tiger_pca_v_95.tif 0`  
 *  `./__main__.py flower.jpg svd 3 min`  
-*  `./__main__.py knight.png>`  
+*  `./__main__.py knight.png`  
