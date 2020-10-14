@@ -2,8 +2,10 @@
 Runs lossy image compression on images with choice parameters.  
   
 ## Usage:
-* `./__main__.py [SOURCE] [ALGORITHM] [MODE] [COMPRESSION] [TARGET] [PREVENT OVERFLOW]`  
-* `./__main__.py [SOURCE] [ALGORITHM] [MODE] [COMPRESSION]`  
+* `./__main__.py [SOURCE] [ALGORITHM] [MODE] [COMPRESSION] [OVERFLOW] [LOG DATA] [TARGET]`
+* `./__main__.py [SOURCE] [ALGORITHM] [MODE] [COMPRESSION] [OVERFLOW] [LOG DATA]`
+* `./__main__.py [SOURCE] [ALGORITHM] [MODE] [COMPRESSION] [OVERFLOW]`
+* `./__main__.py [SOURCE] [ALGORITHM] [MODE] [COMPRESSION]`
 * `./__main__.py [SOURCE]`  
 
 _Note: If the former is used, user will complete parameters through terminal_
@@ -32,16 +34,21 @@ Compression | Mode=v | Mode=c | Mode=q
 **Type and Range** | float between 0 and 100 | int between zero and image height | low, medium, or high
 **Valid for** | pca | pca, svd | pca
   
+## Overflow:
+* 1: True, values of pixels on one or more channels may overflow, resulting in cool noise
+* 0: False, prevent cool noise but retain maximum image quality
+* Optional
+  
+## LOG:
+* 0: Do not log data from algorithm to logs/
+* 1: Log data from algorithm to logs/
+* Optional
+
 ## Target:
 * file name: name with valid extension which will be saved to "output" folder
-  
-_Note: If you would rather show the image but not save, omit this argument_
-  
-## Prevent Overflow:
-* 0: False, values of pixels on one or more channels may overflow, resulting in cool noise
-* 1: True, prevent cool noise but retain maximum image quality
+* Optional
   
 ## Examples:
-*  `./__main__.py tiger.jpg pca 1 95 tiger_pca_v_95.tif 0`  
+*  `./__main__.py tiger.jpg pca 1 95 0 1 tiger_pca_v_95.tif` 
 *  `./__main__.py flower.jpg svd 3 min`  
 *  `./__main__.py knight.png`  
