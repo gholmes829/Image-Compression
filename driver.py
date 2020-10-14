@@ -17,23 +17,32 @@ class Driver:
 			
 		if argc == 2:
 			print(self.usage() + "\n")
-		elif argc == 1 or argc > 7:
+		elif argc == 1 or argc > 8:
 			print(self.usage())
 			return
 
 		print("Initializing...")		
 
+		self.imgName = None
 		self.source = None
 		self.algorithm = None
 		self.mode = None
 		self.compression = None
+		self.overflow = False
+		self.shouldLog = False
 		self.target = None
-		self.preventOverflow = True
 
-		self.resourcePath = os.path.join(os.getcwd(), "images")
+		self.resourcePath = os.path.join(os.getcwd(), "input")
 		self.outputPath = os.path.join(os.getcwd(), "output")
 
+		self.variances = {
+			"low": 90.,
+			"medium": 95.,
+			"high": 99.99,
+		}
+
 		if argc >= 2:
+			self.imgName = argv[1]
 			self.source = argv[1]
 			if argc >= 3:
 				self.algorithm = argv[2]
@@ -42,41 +51,68 @@ class Driver:
 					if argc >= 5:
 						self.compression = argv[4]
 						if argc >= 6:
-							self.target = argv[5]
-							if argc == 7:
+							try:
+								self.overflow = bool(int(argv[5]))
+							except:
+								self.overflow = None
+								while self.overflow is None:
+									try:
+										choice = int(input("\nAllow overflow?\n\t1) True\n\t2) False\n\nChoice: "))-1
+										if choice in {0, 1}:
+											self.overflow = not bool(choice)
+									except ValueError:
+										pass
+							if argc >= 7:
 								try:
-									self.preventOverflow = bool(int(argv[6]))
+									self.shouldLog = bool(int(argv[6]))
 								except:
-									print("\nWarning: could not interpret prevent overflow arg, setting to True\n")
+									self.shouldLog = None
+									while self.shouldLog is None:
+										try:
+											choice = int(input("\nLog data?\n\t1) True\n\t2) False\n\nChoice: "))-1
+											if choice in {0, 1}:
+												self.shouldLog = not bool(choice)
+										except ValueError:
+											pass
+								if argc == 8:
+									self.target = argv[7]
 
 		if self.source is None or not self.validImageFile(self.source):  # get valid image file name
 			choice = ""
+
 			while not self.validImageFile(choice):
 				print("\nSelect valid file from \"images\" folder or add more and restart.")
 				available = os.listdir(self.resourcePath)
+
 				if len(available) == 0:
 					print("No images in \"images\" folder. You need to add more and try again...")
 					return
 				else:
 					for imageName in available:
 						print("\t- " + imageName)
-				choice = input("\nChoice: ")
 
+				choice = input("\nChoice: ")
 			self.source = os.path.join(self.resourcePath, choice)
 		else:
 			self.source = os.path.join(self.resourcePath, self.source)
 
-		self.image = Image(self.source)
+		name = ""
+
+		for l in self.imgName:
+			if l != ".":
+				name+=l
+			else:
+				break	
+
+		self.image = Image(name, self.source)
 	
 		if self.algorithm is None or self.algorithm not in {"pca", "svd"}:  # check which algorithm user wants to use
 			choice = 0
 			options = {"1", "2"}
-		
 			print("\nWhich algorithm would you like to use?\n\t1) PCA\n\t2) SVD")
 
 			while choice not in options:
 				choice = input("\nChoice: ")
-			
 			if choice == "1":
 				self.algorithm = "pca"
 			else:  # choice == "2"
@@ -91,25 +127,17 @@ class Driver:
 			if self.algorithm == "pca":
 				choice = 0
 				options = {"v", "c", "q"}
-				
 				print("\nWith which parameter would you like to determine compression?\n\tv) Variance\n\tc) Component\n\tq) Qualitative")
-
 				while choice not in options:
 					choice = input("\nChoice: ")
-
 			else:  # self.algorithm == "svd"
 				choice = "c"
-	
 			self.mode = choice
-		
 
 		if self.compression is None or not self.validCompression(self.mode, self.compression):  # get value for compression
 			if self.mode == "v":  # mode is variance
-				
 				choice = -1
-
 				print("\nHow much variance would you like to retain? (0, 100): ")		
-	
 				while not self.validCompression(self.mode, choice): 
 					choice = input("\nChoice: ")
 
@@ -117,7 +145,6 @@ class Driver:
 				
 			elif self.mode == "c":  # mode is components
 				choice = -1
-
 				print("\nHow many components would you like to use? (0, " + str(self.image.data.shape[0]) + "): ")
 				while not self.validCompression(self.mode, choice):
 					choice = input("\nChoice: ")
@@ -160,6 +187,10 @@ class Driver:
 				choice = input("\nInput valid target file name: ")
 			self.target = choice
 	
+		if self.mode == "q":
+			self.compression = self.variances[self.compression]
+			self.mode = "v"
+
 		self.initialized = True
 				
 	def usage(self) -> str:
@@ -170,8 +201,10 @@ class Driver:
 Runs lossy image compression on images with choice parameters.
 
 Usage:
-	{self.name} [SOURCE] [ALGORITHM] [MODE] [COMPRESSION] [TARGET] [PREVENT OVERFLOW]
+	{self.name} [SOURCE] [ALGORITHM] [MODE] [COMPRESSION] [OVERFLOW] [TARGET]
+	{self.name} [SOURCE] [ALGORITHM] [MODE] [COMPRESSION] [OVERFLOW]
 	{self.name} [SOURCE] [ALGORITHM] [MODE] [COMPRESSION]
+	{self.name} [SOURCE] [ALGORITHM] [MODE]
 	{self.name} [SOURCE]
 
 Note: If the former is used, user will complete parameters through terminal
@@ -193,14 +226,19 @@ Compression ranges:
 		c -> int
 		q -> Either low, medium, or high quality
 
+Overflow:
+	1: True, values of pixels on one or more channels may overflow, resulting in cool noise
+	0: False, prevent cool noise but retain maximum image quality
+	Optional
+
+Log:
+	1: True, log data to logs/
+	0: False do not log data to logs/
+	Optional
+
 Target:
 	file name: name with valid extension which will be saved to "output" folder
-	
-	Note: If you would rather show the image but not save, omit this argument
-
-Prevent Overflow:
-	0: False, values of pixels on one or more channels may overflow, resulting in cool noise
-	1: True, prevent cool noise but retain maximum image quality
+	Optional
 
 Examples:
 	{self.name} tiger.jpg pca 1 95 tiger_pca_v_95.tif 0
@@ -243,12 +281,31 @@ Examples:
 				return False
 		else:  # mode == q
 			return compression in {"low", "medium", "high"}
+	
+	def saveLog(self, name: str, data: list):
+		"""
+		Save data to text file in "logs"
+		"""
+		path = "logs/" + name + ".txt"
 		
+		f = open(path, "w+")
+		print("Writing log files to " + path)
+		for pt in data:
+			f.write(str(pt[0])+" "+str(pt[1])+"\n")
+		f.close()
+
 	def run(self):
 		if not self.initialized:
 			return
 
-		self.image.compress(self.algorithm, self.mode, self.compression, self.preventOverflow, log=False)
+		logs = self.image.compress(self.algorithm, self.mode, self.compression, overflow=self.overflow)
+
+		print()
+		
+		if self.shouldLog:
+			for channel, log in logs.items():
+				name = self.image.name +"_"+self.algorithm+"_"+self.mode+"_"+str(self.compression).replace(".", "-")+"_"+channel+"_"+str(int(self.overflow))
+				self.saveLog(name, log)
 	
 		if self.target is not None:
 			path = os.path.join(self.outputPath, self.target)

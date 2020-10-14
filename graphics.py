@@ -162,9 +162,6 @@ def main():
 		for channel in data:
 			logData[algorithm][channel]["x"] = np.array(data[channel]["x"])
 			logData[algorithm][channel]["y"] = np.array(data[channel]["y"])
-	
-	
-
 
 	colors = {
 		"r": "red",

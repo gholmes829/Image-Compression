@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# generates compressed images
-# usage ./gen.sh file alg start stop step protectOverflow
-# see ./__main__ usage for more details
+# Generates compressed images
+# Usage ./gen.sh file alg start stop step overflow log
+# See ./__main__ usage for more details
 
 FILE=$1
 alg=$2
@@ -13,6 +13,8 @@ stop=$(($5 + 1))
 step=$6
 
 protectOverflow=$7
+
+log=$8
 
 name=${FILE%%.*}
 ext=${FILE##*.}
@@ -34,7 +36,7 @@ do
 	if [[ !( -f "output/${path}") ]]
 	then
 		echo ${endl}
-    	./__main__.py $FILE $alg $mode $curr ${path} $protectOverflow
+    	./__main__.py $FILE $alg $mode $curr $protectOverflow $path $log 
 		echo "${endl}Done.${endl}${endl}${endl}"
 	else
 	 echo "${output} already exists, skipping iteration...${endl}"
