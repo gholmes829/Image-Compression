@@ -40,8 +40,8 @@ Compression | Mode=v | Mode=c | Mode=q
 * Optional
   
 ## LOG:
-* 0: Do not log data from algorithm to logs/
 * 1: Log data from algorithm to logs/
+* 0: Do not log data from algorithm to logs/
 * Optional
 
 ## Target:
