@@ -65,7 +65,7 @@ class Image:
 				if log:
 					name = self.name+"_"+algorithm.__name__+"_"+mode+"_"+str(int(compression))+"_"+channels[channel]+"_"+str(int(preventOverflow))
 				else:
-					log=None
+					name=None
 				self.data._data[:, :, channel] = algorithm(self.data._data[:, :, channel], mode, compression, log=name).astype(np.uint8)
 
 		self._img = IM.fromarray(self.data._data)
