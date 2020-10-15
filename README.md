@@ -1,4 +1,4 @@
-# PCA-Image-Compression
+# Image-Compression
 Runs lossy image compression on images with choice parameters.  
   
 ## Usage:
