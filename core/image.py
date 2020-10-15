@@ -22,6 +22,10 @@ class Image:
 		show
 	"""
 	def __init__(self, name: str, path: str):
+		"""
+		name: name of image file without extension
+		path: absolute path to image
+		"""
 		self.name = name
 		self.path = path
 		print("\nLoading image data from " + self.path)
@@ -43,6 +47,11 @@ class Image:
 		"""
 		Compress image by reducing dimensionality but retaining resolution.
 
+		algorithm: algorithm to use to compress image
+		mode: mode to determine how compression is measured, either "c" for components or "v" for percent variance
+		compression: value to determine degree of compression associated with mode
+		overflow: allow or prevent overflow when converting float64 reconstructed data back to uint8 for usable image
+
 		Returns: logs for each channel of components used and percentage variance
 		"""
 		reduceDimensions = self.algorithms[algorithm]
@@ -62,6 +71,8 @@ class Image:
 
 	def save(self, path: str):
 		"""
+		path: absolute path to save image
+
 		Save image to given path
 		"""
 		print("\nSaving image as: " + str(path))

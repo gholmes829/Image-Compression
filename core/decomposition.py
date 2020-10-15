@@ -67,6 +67,7 @@ def pca(data: np.array, mode: str, compression: float or int, overflow=False) ->
 
 	inverseTransform = la.multi_dot([feature, feature.T, standardized])*std+mean  # data projected onto principal subspace and then normalized with respect to original basis
 	normalized = np.absolute(inverseTransform)  # normalize data by elimating negatives and complex values for image data
+
 	if overflow:
 		return normalized.astype(np.uint8), log
 	else:

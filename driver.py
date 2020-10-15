@@ -54,7 +54,7 @@ class Driver:
 		# parse cmd line arguments and get user input
 		if argc >= 2:
 			self.imgName = argv[1]
-			self.source = argv[1]
+			self.source = self.imgName  # will get changed to full path later
 			if argc >= 3:
 				self.algorithm = argv[2]
 				if argc >= 4:
@@ -261,6 +261,10 @@ Examples:
 	def validImageFile(self, fileName: str) -> bool:
 		"""
 		Determine whether image file is in "input" folder and whether it has a proper extension
+
+		fileName: name of file w/o full path
+
+		Returns: True/ False
 		"""
 		availableImages = os.listdir(self.resourcePath)
 		exists = fileName in availableImages
@@ -271,6 +275,10 @@ Examples:
 	def validExtension(self, fileName: str) -> bool:
 		"""
 		Determine whether image file has proper extension
+
+		fileName: name of file w/o full path
+
+		Returns: True/ False
 		"""
 		extValid = False		
 
@@ -287,6 +295,11 @@ Examples:
 	def validCompression(self, mode: str, compression: int or float or str) -> bool:
 		"""
 		Determines whether "compression" value is valid given "mode" parameter
+
+		mode: mode to use, either "v", "v", or "q"
+		compression: degree of compression associated with mode
+
+		Returns: True/ False
 		"""
 		if mode == "v":
 			try:
@@ -305,6 +318,9 @@ Examples:
 	def saveLog(self, name: str, data: list):
 		"""
 		Save log data to text file in "logs" folder
+		
+		name: name of log
+		data: data to write to log file
 		"""
 		path = "logs/" + name + ".txt"
 		
