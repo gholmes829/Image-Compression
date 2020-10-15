@@ -8,7 +8,7 @@ Runs lossy image compression on images with choice parameters.
 * `./__main__.py [SOURCE] [ALGORITHM] [MODE] [COMPRESSION]`
 * `./__main__.py [SOURCE]`  
 
-_Note: If the former is used, user will complete parameters through terminal_
+_Note: If arguments incomplete, user will complete parameters through terminal_
     
 ## Source:
 * Select file from "images" folder with valid extension:
