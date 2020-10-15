@@ -23,6 +23,8 @@ class Image:
 	"""
 	def __init__(self, name: str, path: str):
 		"""
+		Open and store image.
+
 		name: name of image file without extension
 		path: absolute path to image
 		"""
@@ -71,9 +73,9 @@ class Image:
 
 	def save(self, path: str):
 		"""
-		path: absolute path to save image
-
 		Save image to given path
+
+		path: absolute path to save image
 		"""
 		print("\nSaving image as: " + str(path))
 		self._img.save(path)
