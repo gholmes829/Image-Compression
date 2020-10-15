@@ -1,5 +1,5 @@
 __pycache__/
 *.pyc
-testing/
+testing/*
 output/*
 !output/.gitkeep
