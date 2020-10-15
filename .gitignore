@@ -4,3 +4,4 @@ testing/
 output/*
 logs/*
 !output/.gitkeep
+!logs/.gitkeep
