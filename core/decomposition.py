@@ -1,5 +1,5 @@
 """
-Popular matrix decompositions for lossy image compression.
+Popular matrix decomposition algorithms for lossy image compression.
 
 Methods:
 	PCA
@@ -9,15 +9,24 @@ Methods:
 import numpy as np
 import numpy.linalg as la
 
-def pca(data: np.array, mode, compression, overflow=False) -> (np.array, list):
+def pca(data: np.array, mode: str, compression: float or int, overflow=False) -> (np.array, list):
 	"""
-	Principal component analysis
+	Principal component analysis.
+
+	Determines orthogonal components that retain maximum variance, projects data to these components
+		then recontructs data by transforming back to original basis.
 
 	mode:
-		v: Percentage of variance to keep   
-		c: Number of components to keep.
+		v: Determine compression by target percentage of variance to keep   
+		c: Determine compression by target number of components to keep.
 	
-	Value corresponding to mode in compression arg
+	compression:
+		value corresponding to mode
+
+	overflow:
+		whether or not to allow overflow when converting data from float64 to uint8
+
+	Returns: compressed image data and log describing components used and percentage variance
 	"""
 
 	rows, cols = data.shape
@@ -63,9 +72,22 @@ def pca(data: np.array, mode, compression, overflow=False) -> (np.array, list):
 	else:
 		return normalized.clip(0, 255), log
 
-def svd(data: np.array, mode, k, overflow=False) -> np.array:
+def svd(data: np.array, mode, k, overflow=False) -> (np.array, list):
 	"""
-	Singular value decomposition
+	Singular value decomposition.
+
+	Compresses image by eliminating singular values that least contribute to variance.
+
+	mode:
+		c: Determine compression by target number of components to keep.
+	
+	k:
+		Number of components to keep
+
+	overflow:
+		whether or not to allow overflow when converting data from float64 to uint8
+
+	Returns: compressed image data and log describing components used and percentage variance
 	"""
 	U, S, V = np.linalg.svd(data)
 	k = np.min((k, S.shape[0]))

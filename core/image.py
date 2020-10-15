@@ -1,5 +1,5 @@
 """
-Classes to wrap and manage images
+Classes to wrap and manage images.
 
 Classes:
 	Image
@@ -14,12 +14,18 @@ from core.decomposition import pca, svd
 
 class Image:
 	"""
-	Wrapper for PIL Image
+	Wrapper for PIL Image.
+
+	Methods:
+		compress
+		save
+		show
 	"""
 	def __init__(self, name: str, path: str):
 		self.name = name
 		self.path = path
 		print("\nLoading image data from " + self.path)
+
 		self._img = IM.open(self.path)
 		self.mode = self._img.mode
 		self.data = np.array(self._img)
@@ -34,11 +40,15 @@ class Image:
 		print("\t- image mode: " + self.mode)
 
 	def compress(self, algorithm: str, mode: str, compression: int or float, overflow=False) -> dict:
+		"""
+		Compress image by reducing dimensionality but retaining resolution.
+
+		Returns: logs for each channel of components used and percentage variance
+		"""
 		reduceDimensions = self.algorithms[algorithm]
 		channels = self._img.getbands()
 
 		timer = time()
-
 		logs = {}
 
 		for channel in range(0, len(channels)):
@@ -51,9 +61,15 @@ class Image:
 		return logs
 
 	def save(self, path: str):
+		"""
+		Save image to given path
+		"""
 		print("\nSaving image as: " + str(path))
 		self._img.save(path)
 
 	def show(self):
+		"""
+		Open and display image
+		"""
 		self._img.show()
 

@@ -1,15 +1,25 @@
 """
 Driver to handle inputs and configure compression.
+
+Classes:
+	Driver
 """
 
 from core.image import Image
 import os
 
 class Driver:
-
 	def __init__(self, argv: list, argc: int):
 		"""
 		argv: ./__main__.py [SOURCE] [ALGORITHM] [MODE] [COMPRESSION] [TARGET] [PREVENT OVERFLOW]
+		argc: number of command line arguments
+
+		Methods:
+			validImageFile
+			validExtension
+			validCompression
+			saveLog
+			run
 		"""
 		self.name = argv[0]
 		self.validExt = (".jpg", ".jpeg", ".png", ".tif")
@@ -41,6 +51,7 @@ class Driver:
 			"high": 99.99,
 		}
 
+		# parse cmd line arguments and get user input
 		if argc >= 2:
 			self.imgName = argv[1]
 			self.source = argv[1]
@@ -248,6 +259,9 @@ Examples:
 {"o"+"="*85+"o"}"""
 
 	def validImageFile(self, fileName: str) -> bool:
+		"""
+		Determine whether image file is in "input" folder and whether it has a proper extension
+		"""
 		availableImages = os.listdir(self.resourcePath)
 		exists = fileName in availableImages
 		extValid = self.validExtension(fileName)
@@ -255,6 +269,9 @@ Examples:
 		return exists and extValid
 
 	def validExtension(self, fileName: str) -> bool:
+		"""
+		Determine whether image file has proper extension
+		"""
 		extValid = False		
 
 		for ext in self.validExt:
@@ -268,6 +285,9 @@ Examples:
 		return False
 	
 	def validCompression(self, mode: str, compression: int or float or str) -> bool:
+		"""
+		Determines whether "compression" value is valid given "mode" parameter
+		"""
 		if mode == "v":
 			try:
 				return (0 <= float(compression) <= 100)
@@ -284,7 +304,7 @@ Examples:
 	
 	def saveLog(self, name: str, data: list):
 		"""
-		Save data to text file in "logs"
+		Save log data to text file in "logs" folder
 		"""
 		path = "logs/" + name + ".txt"
 		
@@ -295,6 +315,9 @@ Examples:
 		f.close()
 
 	def run(self):
+		"""
+		Run compression, handle saving image and logging data.
+		"""
 		if not self.initialized:
 			return
 
