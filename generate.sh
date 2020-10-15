@@ -36,7 +36,7 @@ do
 	if [[ !( -f "output/${path}") ]]
 	then
 		echo ${endl}
-    	./__main__.py $FILE $alg $mode $curr $protectOverflow $path $log 
+    	./__main__.py $FILE $alg $mode $curr $protectOverflow $log $path
 		echo "${endl}Done.${endl}${endl}${endl}"
 	else
 	 echo "${output} already exists, skipping iteration...${endl}"
