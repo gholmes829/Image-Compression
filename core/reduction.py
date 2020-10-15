@@ -4,7 +4,6 @@ Popular matrix decompositions for lossy image compression.
 Methods:
 	PCA
 	SVD
-	logData
 """
 
 import numpy as np
@@ -42,24 +41,13 @@ def pca(data: np.array, mode, compression, overflow=False) -> (np.array, list):
 	log.append((pcs, percent))
 
 	if mode == "v":
-		#print("\nTotal possible variance for channel: " + str(round(np.real(total), 3)))
 		while round(percent, 1) < compression:  # need to keep increasing components
 			accumulated += eigVal[pcs]
 			percent = (accumulated/total)*100
 			pcs += 1
 			log.append((pcs, np.real(percent)))
 
-			#if ((np.real(percent) < 50 or np.real(percent) >= 99.95 or np.real(percent) >= compression) and pcs%1==0) \
-			#	or (50 <= np.real(percent) < 70 and pcs%2==0) \
-			#	or (70 <= np.real(percent) < 85 and pcs%3==0) \
-			#	or (85 <= np.real(percent) < 95 and pcs%5==0) \
-			#	or (95 <= np.real(percent) < 99 and pcs%10==0):
-			#	print("\t- accumulated " + str(pcs) + " component(s): " + str(round(np.real(variance), 2)) + " (" + str(round(np.real(percent), 2)) + "%)")
-		
-		#print("\n\t- using " + str(pcs) + " components to achieve " + str(round(np.real(percent), 2)) + "% variance\n") 
-
 	elif mode == "c":
-		#print("\nUsing " + str(compression) + " components...")
 		while pcs < compression:
 			accumulated += eigVal[pcs]
 			percent = (accumulated/total)*100
@@ -84,14 +72,14 @@ def svd(data: np.array, mode, k, overflow=False) -> np.array:
 	k = np.min((k, S.shape[0]))
 
 	total = np.sum(S)
-	
-	log = []
 
 	components = 0
 	accumulated = 0
 	percent = 0
 
+	log = []
 	log.append((components, percent))
+
 	while components < k:
 		accumulated += S[components]
 		percent = (accumulated/total)*100
@@ -102,8 +90,4 @@ def svd(data: np.array, mode, k, overflow=False) -> np.array:
 		return np.absolute(la.multi_dot([U[:,:k], np.diag(S[:k]), V[:k,:]])).astype(np.uint8), log
 	else:
 		return np.absolute(la.multi_dot([U[:,:k], np.diag(S[:k]), V[:k,:]])).clip(0, 255), log
-
-
-
-
 

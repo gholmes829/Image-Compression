@@ -1,5 +1,5 @@
 """
-Contains classes to manage image and image data.
+Classes to wrap and manage images
 
 Classes:
 	Image
@@ -39,15 +39,11 @@ class Image:
 
 		timer = time()
 
-		#getLogName = lambda channel: self.name+"_"+algorithm+"_"+mode+"_"+str(int(compression))+"_"+channels[channel]+"_"+str(int(preventOverflow))
-		#logName = None
 		logs = {}
 
 		for channel in range(0, len(channels)):
 			print("\nCALCULATING: [" + str(channels[channel]) + "]")
 
-			#if log:
-			#	logName = getLogName(channel)
 			self.data[:, :, channel], log = reduceDimensions(self.data[:, :, channel], mode, compression, overflow=overflow)
 			logs[channels[channel]] = log
 
