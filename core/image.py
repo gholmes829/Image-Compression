@@ -10,7 +10,7 @@ from PIL import Image as IM
 import matplotlib.pyplot as plt
 from time import time
 
-from core.reduction import pca, svd
+from core.decomposition import pca, svd
 
 class Image:
 	"""
@@ -43,7 +43,6 @@ class Image:
 
 		for channel in range(0, len(channels)):
 			print("\nCALCULATING: [" + str(channels[channel]) + "]")
-
 			self.data[:, :, channel], log = reduceDimensions(self.data[:, :, channel], mode, compression, overflow=overflow)
 			logs[channels[channel]] = log
 
