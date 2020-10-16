@@ -45,7 +45,7 @@ class Image:
 		print("\t- dimensions of image: " + str(self.data.shape))
 		print("\t- image mode: " + self.mode)
 
-	def compress(self, algorithm: str, mode: str, compression: int or float, overflow=False) -> dict:
+	def compress(self, algorithm: str, mode: str, compression: int or float, overflow: bool=False) -> dict:
 		"""
 		Compress image by reducing dimensionality but retaining resolution.
 

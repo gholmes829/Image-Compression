@@ -9,7 +9,7 @@ Methods:
 import numpy as np
 import numpy.linalg as la
 
-def pca(data: np.array, mode: str, compression: float or int, overflow=False) -> (np.array, list):
+def pca(data: np.array, mode: str, compression: float or int, overflow: bool=False) -> (np.array, list):
 	"""
 	Principal component analysis.
 
@@ -73,7 +73,7 @@ def pca(data: np.array, mode: str, compression: float or int, overflow=False) ->
 	else:
 		return normalized.clip(0, 255), log
 
-def svd(data: np.array, mode, k, overflow=False) -> (np.array, list):
+def svd(data: np.array, mode: str, k: int, overflow: bool=False) -> (np.array, list):
 	"""
 	Singular value decomposition.
 
