@@ -263,6 +263,18 @@ Examples:
 			return compression in {"low", "medium", "high"}
 
 	def getValidInput(self, msg: str, dtype: any, lower: float=None, upper: float=None, valid: set=None, isValid: callable=None) -> any:
+		"""
+		Gets input from user contrained by parameters
+		
+		msg: message to print out to user requesting input
+		dtype: type that input will get converted to
+		lower: numerical lower bound
+		upper: numerical upper bound
+		valid: set of possible valid inputs
+		isValid: function returning bool to determine if input is valid
+
+		Returns: valid input
+		"""
 		print(msg)
 		while True:
 			try:
