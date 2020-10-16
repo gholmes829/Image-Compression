@@ -18,6 +18,7 @@ class Driver:
 			validImageFile
 			validExtension
 			validCompression
+			getValidInput
 			saveLog
 			run
 		"""
