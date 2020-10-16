@@ -11,7 +11,7 @@ import os
 class Driver:
 	def __init__(self, argv: list, argc: int):
 		"""
-		argv: ./__main__.py [SOURCE] [ALGORITHM] [MODE] [COMPRESSION] [TARGET] [PREVENT OVERFLOW]
+		argv: ./__main__.py [SOURCE] [ALGORITHM] [MODE] [COMPRESSION] [OVERFLOW] [TARGET]
 		argc: number of command line arguments
 
 		Methods:
@@ -35,6 +35,7 @@ class Driver:
 
 		self.imgName = None
 		self.source = None
+		self.path = None
 		self.algorithm = None
 		self.mode = None
 		self.compression = None
@@ -53,8 +54,8 @@ class Driver:
 
 		# parse cmd line arguments and get user input
 		if argc >= 2:
-			self.imgName = argv[1]
-			self.source = self.imgName  # will get changed to full path later
+			imgName = argv[1]
+			self.source = argv[1]  # will get changed to full path later
 			if argc >= 3:
 				self.algorithm = argv[2]
 				if argc >= 4:
@@ -65,125 +66,78 @@ class Driver:
 							try:
 								self.overflow = bool(int(argv[5]))
 							except:
-								self.overflow = None
-								while self.overflow is None:
-									try:
-										choice = int(input("\nAllow overflow?\n\t1) True\n\t2) False\n\nChoice: "))-1
-										if choice in {0, 1}:
-											self.overflow = not bool(choice)
-									except ValueError:
-										pass
+								self.overflow = not bool(self.getValidInput("\nAllow overflow?\n\t1) True\n\t2) False", int, valid={1, 2})-1)
 							if argc >= 7:
 								try:
 									self.shouldLog = bool(int(argv[6]))
 								except:
-									self.shouldLog = None
-									while self.shouldLog is None:
-										try:
-											choice = int(input("\nLog data?\n\t1) True\n\t2) False\n\nChoice: "))-1
-											if choice in {0, 1}:
-												self.shouldLog = not bool(choice)
-										except ValueError:
-											pass
+									self.shouldLog = not bool(self.getValidInput("\nLog data?\n\t1) True\n\t2) False: ", int, valid={1, 2})-1)
 								if argc == 8:
 									self.target = argv[7]
+									if not self.validExtension(self.target):
+										self.target = self.getValidInput("\nInput valid target file name: ", str, isValid=self.validExtension)
 
 		if self.source is None or not self.validImageFile(self.source):  # get valid image file name
-			choice = ""
+			available = os.listdir(self.resourcePath)
 
-			while not self.validImageFile(choice):
-				print("\nSelect valid file from \"images\" folder or add more and restart.")
-				available = os.listdir(self.resourcePath)
+			if len(available) == 0:
+				print("No images in \"images\" folder. Add more and try again...")
+				return
 
-				if len(available) == 0:
-					print("No images in \"images\" folder. You need to add more and try again...")
-					return
-				else:
-					for imageName in available:
-						print("\t- " + imageName)
+			options = ""
 
-				choice = input("\nChoice: ")
-			self.source = os.path.join(self.resourcePath, choice)
-		else:
-			self.source = os.path.join(self.resourcePath, self.source)
+			for imageName in available:
+				options += "\n\t- " + imageName
 
-		name = ""
+			self.source = self.getValidInput("\nSelect valid file from \"images\" folder."+options, str, isValid=self.validImageFile)
+		
+		self.path = os.path.join(self.resourcePath, self.source)
 
-		for l in self.imgName:
+		self.imgName = ""
+
+		for l in imgName:
 			if l != ".":
-				name+=l
+				self.imgName += l
 			else:
-				break	
+				break
 
-		self.image = Image(name, self.source)
+		self.image = Image(self.imgName, self.path)
 	
 		if self.algorithm is None or self.algorithm not in {"pca", "svd"}:  # check which algorithm user wants to use
-			choice = 0
-			options = {"1", "2"}
-			print("\nWhich algorithm would you like to use?\n\t1) PCA\n\t2) SVD")
-
-			while choice not in options:
-				choice = input("\nChoice: ")
-			if choice == "1":
+			choice = self.getValidInput("\nWhich algorithm would you like to use?\n\t1) PCA\n\t2) SVD", int, valid={1, 2})
+			if choice == 1:
 				self.algorithm = "pca"
-			else:  # choice == "2"
+			else:  # choice == 2
 				self.algorithm = "svd"
-
-		if self.algorithm == "svd" and not (self.mode is None or self.mode == "c"):
-			print("Invalid mode for SVD. Setting mode to \"components\".")
-			self.mode = "c"
-			self.compression = None
 
 		if self.mode is None or self.mode not in {"v", "c", "q"}:  # check which mode user wants to use
 			if self.algorithm == "pca":
-				choice = 0
-				options = {"v", "c", "q"}
-				print("\nWith which parameter would you like to determine compression?\n\tv) Variance\n\tc) Component\n\tq) Qualitative")
-				while choice not in options:
-					choice = input("\nChoice: ")
+				choice = self.getValidInput("\nHow would you like to determine compression?\n\tv) Variance\n\tc) Component\n\tq) Qualitative", str, valid={"v", "c", "q"})
 			else:  # self.algorithm == "svd"
 				choice = "c"
 			self.mode = choice
 
+		if self.algorithm == "svd" and not self.mode == "c":
+			print("Invalid mode for SVD: " + str(self.mode) + "\n\t- setting mode to \"c\", \"components\"")
+			self.mode = "c"
+			self.compression = None
+
 		if self.compression is None or not self.validCompression(self.mode, self.compression):  # get value for compression
 			if self.mode == "v":  # mode is variance
-				choice = -1
-				print("\nHow much variance would you like to retain? (0, 100): ")		
-				while not self.validCompression(self.mode, choice): 
-					choice = input("\nChoice: ")
-
-				choice = float(choice)
+				choice = self.getValidInput("\nHow much variance would you like to retain? (0, 100): ", float, lower=0, upper=100)
 				
 			elif self.mode == "c":  # mode is components
-				choice = -1
-				print("\nHow many components would you like to use? (0, " + str(self.image.data.shape[0]) + "): ")
-				while not self.validCompression(self.mode, choice):
-					choice = input("\nChoice: ")
-
-				choice = int(choice)	
-			
+				choice = self.getValidInput("\nHow many components would you like to use? (0, " + str(self.image.data.shape[0]) + "): ", int, lower=0, upper=self.image.data.shape[0])
+		
 			else:  # mode is qualitative
-				
 				quality = {
 					1: "high",
 					2: "medium",
 					3: "low",
 				}
 
-				choice = ""
-				
-				print("\nHow much quality would you like?\n\t1) High\n\t2) Medium\n\t3) Low")
-				while not self.validCompression(self.mode, choice):
-					choice = input("\nChoice: ")
-					try:
-						choice = int(choice)
-						try:
-							choice = quality[choice]
-						except KeyError:
-							choice = ""
-					except ValueError:
-						choice = ""
-
+				choice = quality[self.getValidInput("\nHow much quality would you like?\n\t1) High\n\t2) Medium\n\t3) Low", int, valid={1, 2, 3})]
+			
 			self.compression = choice
 
 		elif self.mode == "v":  # compression passed through command line
@@ -192,12 +146,6 @@ class Driver:
 		elif self.mode == "c":  # compression passed through command line
 			self.compression = int(self.compression)
 
-		if self.target is not None:
-			choice = self.target
-			while not self.validExtension(choice):
-				choice = input("\nInput valid target file name: ")
-			self.target = choice
-	
 		if self.mode == "q":
 			self.compression = self.variances[self.compression]
 			self.mode = "v"
@@ -269,7 +217,6 @@ Examples:
 		availableImages = os.listdir(self.resourcePath)
 		exists = fileName in availableImages
 		extValid = self.validExtension(fileName)
-
 		return exists and extValid
 
 	def validExtension(self, fileName: str) -> bool:
@@ -314,6 +261,22 @@ Examples:
 				return False
 		else:  # mode == q
 			return compression in {"low", "medium", "high"}
+
+	def getValidInput(self, msg: str, dtype: any, lower: float=None, upper: float=None, valid: set=None, isValid: callable=None) -> any:
+		print(msg)
+		while True:
+			try:
+				choice = dtype(input("\nChoice: "))
+			except ValueError:
+				continue
+
+			if (lower is not None and choice < lower) or \
+				(upper is not None and choice > upper) or \
+				(valid is not None and choice not in valid) or \
+				(isValid is not None and not isValid(choice)):
+				continue
+
+			return choice
 	
 	def saveLog(self, name: str, data: list):
 		"""
